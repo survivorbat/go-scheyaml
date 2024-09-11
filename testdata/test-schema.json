@@ -1,0 +1,73 @@
+{
+  "type": "object",
+  "properties": {
+    "stringProperty": {
+      "type": "string",
+      "default": "Hello World!",
+      "description": "This property is for testing string Scalar nodes",
+      "examples": [
+        "Hello",
+        "World",
+        "Foo"
+      ]
+    },
+    "integerProperty": {
+      "type": "integer",
+      "default": 20,
+      "description": "Do integers work as well?",
+      "examples": [
+        1,
+        5,
+        7
+      ]
+    },
+    "numberProperty": {
+      "type": "number",
+      "default": 12,
+      "description": "Numbers should work too",
+      "examples": [
+        5,
+        7
+      ]
+    },
+    "nullProperty": {
+      "type": "null",
+      "default": false,
+      "description": "Null is a valid option",
+      "examples": [
+        null
+      ]
+    },
+    "booleanProperty": {
+      "type": "boolean",
+      "default": false,
+      "description": "Booleans are simple",
+      "examples": [
+        true,
+        false
+      ]
+    },
+    "objectProperty": {
+      "type": "object",
+      "description": "Nested object",
+      "properties": {
+        "deepPropertyWithoutDescription": {
+          "type": "string",
+          "examples": [
+            "a",
+            "b",
+            "d"
+          ]
+        }
+      }
+    },
+    "arrayProperty": {
+      "type": "array",
+      "items": {
+        "type": "number",
+        "default": 31,
+        "description": "Very important number"
+      }
+    }
+  }
+}

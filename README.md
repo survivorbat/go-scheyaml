@@ -1,6 +1,7 @@
 # 📅 Schema Yaml
 
-TODO: Description
+Ever wanted to turn a JSON schema into an example YAML file? Probably not, but this library allows you
+to do just that (in a limited fashion).
 
 ## ⬇️ Installation
 
@@ -10,6 +11,17 @@ TODO: Description
 
 Check out [this example](./examples_test.go)
 
+## ✅ Support
+
+- [x] Basic types (string, number, integer, null)
+- [x] Object type
+- [x] Array
+- [] Definitions
+- [] AnyOf
+- [] AllOf
+- [] Pattern Properties
+
 ## 🔭 Plans
 
-Not much yet.
+- Maybe add templating at some point
+- Add a json output method
