@@ -16,10 +16,10 @@ Check out [this example](./examples_test.go)
 - [x] Basic types (string, number, integer, null)
 - [x] Object type
 - [x] Array
-- [] Definitions
-- [] AnyOf
-- [] AllOf
-- [] Pattern Properties
+- [ ] Definitions
+- [ ] AnyOf
+- [ ] AllOf
+- [ ] Pattern Properties
 
 ## 🔭 Plans
 
