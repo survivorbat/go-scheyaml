@@ -64,9 +64,18 @@
     "arrayProperty": {
       "type": "array",
       "items": {
-        "type": "number",
-        "default": 31,
-        "description": "Very important number"
+        "type": "object",
+        "properties": {
+          "magicNumber": {
+            "type": "integer",
+            "description": "A magic number",
+            "examples": [
+              12,
+              25,
+              62
+            ]
+          }
+        }
       }
     }
   }

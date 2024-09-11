@@ -1,5 +1,11 @@
 arrayProperty:
-    - 31
+    - # A magic number
+      #
+      # Examples:
+      # - 12
+      # - 25
+      # - 62
+      magicNumber: # TODO: Fill this in
 # Booleans are simple
 #
 # Examples:
