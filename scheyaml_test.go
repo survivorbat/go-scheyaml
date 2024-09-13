@@ -21,7 +21,7 @@ func TestSchemaToYAML_ReturnsExpectedOutput(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 
-	expectedData, _ := os.ReadFile(path.Join("testdata", "test-schema-result.yaml"))
+	expectedData, _ := os.ReadFile(path.Join("testdata", "test-schema-output-defaults.yaml"))
 
 	// First test the data itself, and quit if it isn't as expected.
 	require.YAMLEq(t, string(expectedData), string(result))
@@ -41,7 +41,7 @@ func TestSchemaToNode_ReturnsExpectedOutput(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 
-	expectedData, _ := os.ReadFile(path.Join("testdata", "test-schema-result.yaml"))
+	expectedData, _ := os.ReadFile(path.Join("testdata", "test-schema-output-defaults.yaml"))
 
 	actualData, err := yaml.Marshal(result)
 	require.NoError(t, err)

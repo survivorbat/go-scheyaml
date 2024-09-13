@@ -7,16 +7,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// Option is used to customise the SchemaToYAML output
-type Option func(*config)
-
-// config serves as the configuration object to allow customisation in SchemaToYAML
-type config struct{}
-
 // SchemaToYAML will take the given JSON schema and turn it into an example YAML file using fields like
 // `description` and `examples` for documentation, `default` for default values and `properties` for listing blocks.
 //
-// There are currently no options available yet
+// You may provide options to customise the output.
 func SchemaToYAML(schema []byte, opts ...Option) ([]byte, error) {
 	rootNode, err := SchemaToNode(schema, opts...)
 	if err != nil {
@@ -34,11 +28,19 @@ func SchemaToYAML(schema []byte, opts ...Option) ([]byte, error) {
 
 // SchemaToNode is a lower-level version of SchemaToYAML, but returns the yaml.Node instead of the
 // marshalled YAML.
-func SchemaToNode(schema []byte, _ ...Option) (*yaml.Node, error) {
-	var schemaObject jsonSchema
+//
+// You may provide options to customise the output.
+func SchemaToNode(schema []byte, opts ...Option) (*yaml.Node, error) {
+	config := NewConfig()
+
+	for _, opt := range opts {
+		opt(config)
+	}
+
+	var schemaObject JSONSchema
 	if err := json.Unmarshal(schema, &schemaObject); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal schema to jsonSchema object: %w", err)
 	}
 
-	return schemaObject.yamlExample(), nil
+	return schemaObject.ScheYAML(config), nil
 }

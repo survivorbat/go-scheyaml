@@ -13,6 +13,8 @@ Check out [this example](./examples_test.go)
 
 ## ✅ Support
 
+- [x] Feature to override values in output
+- [x] Feature to override the comment on a missing default value
 - [x] Basic types (string, number, integer, null)
 - [x] Object type
 - [x] Array

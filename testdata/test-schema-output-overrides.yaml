@@ -1,0 +1,46 @@
+arrayProperty:
+    - # A magic number
+      #
+      # Examples:
+      # - 12
+      # - 25
+      # - 62
+      magicNumber: # Perform magic here
+# Booleans are simple
+#
+# Examples:
+# - true
+# - false
+booleanProperty: false
+# Do integers work as well?
+#
+# Examples:
+# - 1
+# - 5
+# - 7
+integerProperty: 20
+# Null is a valid option
+#
+# Examples:
+# - null
+nullProperty: null
+# Numbers should work too
+#
+# Examples:
+# - 5
+# - 7
+numberProperty: 84
+# Nested object
+objectProperty:
+    # Examples:
+    # - a
+    # - b
+    # - d
+    deepPropertyWithoutDescription: b
+# This property is for testing string Scalar nodes
+#
+# Examples:
+# - Hello
+# - World
+# - Foo
+stringProperty: Hello World!
