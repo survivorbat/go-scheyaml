@@ -16,23 +16,27 @@ var (
 	_ json.Unmarshaler = new(JSONSchema)
 )
 
+// PropType is a limited set of options from: https://json-schema.org/understanding-json-schema/reference/type
+type PropType string
+
+const (
+	TypeString  PropType = "string"
+	TypeInteger PropType = "integer"
+	TypeNumber  PropType = "number"
+	TypeObject  PropType = "object"
+	TypeArray   PropType = "array"
+	TypeBoolean PropType = "boolean"
+	TypeNull    PropType = "null"
+)
+
 // JSONSchema is used to unmarshal the incoming JSON schema into, does not support anyOf an allOf (yet).
 // It only features properties used in the ScheYAML process. It does preserve additional properties in the
 // json schema to unmarhsal/marshal without losing data.
 //
 // This object is part of the lower-level API, the package-level methods are for regular usage
 type JSONSchema struct {
-	// Type should be one of:
-	// - string
-	// - number
-	// - integer
-	// - object
-	// - array
-	// - boolean
-	// - null
-	//
-	// Source: https://json-schema.org/understanding-json-schema/reference/type
-	Type string `json:"type"`
+	// Type must always be set
+	Type PropType `json:"type"`
 
 	// Default, if set, will be the value pre-filled in the result
 	Default any `json:"default,omitempty"`
@@ -49,8 +53,7 @@ type JSONSchema struct {
 	// Items is only used if type is `array`
 	Items *JSONSchema `json:"items,omitempty"`
 
-	// misc contains all the leftover properties that we don't use, but want to preserve on a
-	// Marshal call
+	// misc contains all the leftover properties that we don't use, but want to preserve on a Unmarshal call
 	misc map[string]any `json:"-"`
 }
 
@@ -63,7 +66,7 @@ func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
 	result := new(yaml.Node)
 
 	switch j.Type {
-	case "object":
+	case TypeObject:
 		result.Kind = yaml.MappingNode
 		result.Content = make([]*yaml.Node, len(j.Properties)*yamlNodesPerField)
 
@@ -94,15 +97,15 @@ func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
 			result.Content[index*yamlNodesPerField+1] = property.ScheYAML(cfg.forProperty(propertyName))
 		}
 
-	case "array":
+	case TypeArray:
 		result.Kind = yaml.SequenceNode
 		result.Content = []*yaml.Node{j.Items.ScheYAML(cfg)}
 
-	case "null":
+	case TypeNull:
 		result.Kind = yaml.ScalarNode
 		result.Value = "null"
 
-		// Leftover options: string, number, integer, boolean, null
+	// Leftover options: string, number, integer, boolean, null
 	default:
 		result.Kind = yaml.ScalarNode
 
