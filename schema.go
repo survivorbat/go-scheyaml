@@ -16,19 +16,6 @@ var (
 	_ json.Unmarshaler = new(JSONSchema)
 )
 
-// PropType is a limited set of options from: https://json-schema.org/understanding-json-schema/reference/type
-type PropType string
-
-const (
-	TypeString  PropType = "string"
-	TypeInteger PropType = "integer"
-	TypeNumber  PropType = "number"
-	TypeObject  PropType = "object"
-	TypeArray   PropType = "array"
-	TypeBoolean PropType = "boolean"
-	TypeNull    PropType = "null"
-)
-
 // JSONSchema is used to unmarshal the incoming JSON schema into, does not support anyOf an allOf (yet).
 // It only features properties used in the ScheYAML process. It does preserve additional properties in the
 // json schema to unmarhsal/marshal without losing data.
@@ -65,6 +52,7 @@ const yamlNodesPerField = 2
 func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
 	result := new(yaml.Node)
 
+	//nolint:exhaustive // Not necessary, only array, null and object get special treatment
 	switch j.Type {
 	case TypeObject:
 		result.Kind = yaml.MappingNode
@@ -105,14 +93,21 @@ func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
 		result.Kind = yaml.ScalarNode
 		result.Value = "null"
 
-	// Leftover options: string, number, integer, boolean, null
+	// Leftover options: string, number, integer, boolean
 	default:
 		result.Kind = yaml.ScalarNode
 
-		if j.Default != nil {
+		switch {
+		case j.Default != nil:
 			result.Value = fmt.Sprint(j.Default)
-		} else {
+
+		case j.Type == TypeString:
 			result.LineComment = cfg.TODOComment
+			result.SetString("")
+
+		default:
+			result.LineComment = cfg.TODOComment
+			result.Value = j.Type.DefaultValue()
 		}
 	}
 

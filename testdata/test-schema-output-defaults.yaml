@@ -5,7 +5,7 @@ arrayProperty:
       # - 12
       # - 25
       # - 62
-      magicNumber: # TODO: Fill this in
+      magicNumber: 0 # TODO: Fill this in
 # Booleans are simple
 #
 # Examples:
@@ -36,7 +36,7 @@ objectProperty:
     # - a
     # - b
     # - d
-    deepPropertyWithoutDescription: # TODO: Fill this in
+    deepPropertyWithoutDescription: "" # TODO: Fill this in
 # This property is for testing string Scalar nodes
 #
 # Examples:
