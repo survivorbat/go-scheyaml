@@ -6,11 +6,19 @@ type Option func(*Config)
 // defaultTODOComment is used if no default value was defined or a property
 const defaultTODOComment = "TODO: Fill this in"
 
+// defaultLineLength is a reasonable 80 characters to make sure the generated
+// output isn't overly long, and schema files don't need to insert their own
+// newlines.
+//
+// Also, this docstring is written to not exceed the 80 character limit :)
+const defaultLineLength = 80
+
 // NewConfig instantiates a config object with default values
 func NewConfig() *Config {
 	return &Config{
 		ValueOverrides: make(map[string]any),
 		TODOComment:    defaultTODOComment,
+		LineLength:     defaultLineLength,
 	}
 }
 
@@ -27,6 +35,10 @@ type Config struct {
 
 	// Minimal mode only renders properties which are required and have no default value
 	Minimal bool
+
+	// LineLength prevents descriptions and unreasonably long lines. Can be disabled
+	// completely by setting it to 0.
+	LineLength uint
 }
 
 // forProperty will construct a config object for the given property, allows for recursive
@@ -44,8 +56,10 @@ func (c *Config) forProperty(propertyName string) *Config {
 	}
 
 	return &Config{
-		TODOComment:    c.TODOComment,
-		Minimal:        c.Minimal,
+		TODOComment: c.TODOComment,
+		Minimal:     c.Minimal,
+		LineLength:  c.LineLength,
+
 		ValueOverrides: valueOverrides,
 	}
 }
@@ -88,5 +102,13 @@ func WithTODOComment(comment string) Option {
 func Minimal() Option {
 	return func(c *Config) {
 		c.Minimal = true
+	}
+}
+
+// WithCommentMaxLength prevents descriptions generating unreasonably long lines. Can be disabled
+// completely by setting it to 0.
+func WithCommentMaxLength(lineLength uint) Option {
+	return func(c *Config) {
+		c.LineLength = lineLength
 	}
 }

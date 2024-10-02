@@ -15,6 +15,21 @@ func TestConfig_ForProperty_ReturnsExpectedConfig(t *testing.T) {
 
 		expected *Config
 	}{
+		"copies over 'simple' values from parent config": {
+			input: &Config{
+				TODOComment: "abc",
+				LineLength:  20,
+				Minimal:     true,
+			},
+			propertyName: "foo",
+
+			expected: &Config{
+				TODOComment:    "abc",
+				LineLength:     20,
+				Minimal:        true,
+				ValueOverrides: map[string]any{},
+			},
+		},
 		"non-existing property returns empty ValueOverrides": {
 			input:        &Config{},
 			propertyName: "does-not-exist",
@@ -41,17 +56,6 @@ func TestConfig_ForProperty_ReturnsExpectedConfig(t *testing.T) {
 
 			expected: &Config{
 				ValueOverrides: map[string]any{"bar": "baz"},
-			},
-		},
-		"subproperty is returned with minimal=true if set on parent": {
-			input: &Config{
-				Minimal: true,
-			},
-			propertyName: "foo",
-
-			expected: &Config{
-				Minimal:        true,
-				ValueOverrides: map[string]any{},
 			},
 		},
 	}

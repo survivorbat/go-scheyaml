@@ -6,6 +6,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/mitchellh/go-wordwrap"
 	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
@@ -85,7 +86,7 @@ func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
 			result.Content[index*yamlNodesPerField] = &yaml.Node{
 				Kind:        yaml.ScalarNode,
 				Value:       propertyName,
-				HeadComment: property.formatHeadComment(),
+				HeadComment: property.formatHeadComment(cfg.LineLength),
 			}
 
 			// Skip recursing further and override the value with whatever the config says
@@ -133,12 +134,21 @@ func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
 }
 
 // formatHeadComment will generate the comment above the property with the description
-// and example values.
-func (j *JSONSchema) formatHeadComment() string {
+// and example values. the desc
+func (j *JSONSchema) formatHeadComment(lineLength uint) string {
 	var builder strings.Builder
 
 	if j.Description != "" {
-		builder.WriteString(j.Description)
+		description := j.Description
+
+		if lineLength > 0 {
+			description = wordwrap.WrapString(j.Description, lineLength)
+		}
+
+		// Empty new lines aren't respected by default
+		description = strings.ReplaceAll(description, "\n\n", "\n#\n")
+
+		builder.WriteString(description)
 	}
 
 	if j.Description != "" && len(j.Examples) > 0 {
