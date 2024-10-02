@@ -24,6 +24,9 @@ type Config struct {
 	// TODOComment is used in case no default value was defined for a property. It is set by
 	// default in NewConfig but can be emptied to remove the comment altogether.
 	TODOComment string
+
+	// Minimal mode only renders properties which are required and have no default value
+	Minimal bool
 }
 
 // forProperty will construct a config object for the given property, allows for recursive
@@ -42,6 +45,7 @@ func (c *Config) forProperty(propertyName string) *Config {
 
 	return &Config{
 		TODOComment:    c.TODOComment,
+		Minimal:        c.Minimal,
 		ValueOverrides: valueOverrides,
 	}
 }

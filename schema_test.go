@@ -39,6 +39,35 @@ func TestJSONSchemaObject_YAMLExample_ReturnsExpectedNodesWithDefaults(t *testin
 	assert.Equal(t, string(expectedData), string(actualData))
 }
 
+func TestJSONSchemaObject_YAMLExample_ReturnsExpectedMinimalVersion(t *testing.T) {
+	t.Parallel()
+	// Arrange
+	inputData, _ := os.ReadFile(path.Join("testdata", "test-schema-required.json"))
+
+	var schemaObject JSONSchema
+	err := json.Unmarshal(inputData, &schemaObject)
+	require.NoError(t, err)
+
+	cfg := NewConfig()
+	cfg.Minimal = true
+
+	// Act
+	result := schemaObject.ScheYAML(cfg)
+
+	// Assert
+	expectedData, _ := os.ReadFile(path.Join("testdata", "test-schema-required-output.yaml"))
+
+	// Raw YAML from the node
+	actualData, err := yaml.Marshal(&result)
+	require.NoError(t, err)
+
+	// First test the data itself, and quit if it isn't as expected.
+	require.YAMLEq(t, string(expectedData), string(actualData))
+
+	// If the properties are as expected, test the comments
+	assert.Equal(t, string(expectedData), string(actualData))
+}
+
 func TestJSONSchemaObject_YAMLExample_OverridesValuesFromConfig(t *testing.T) {
 	t.Parallel()
 	// Arrange
@@ -96,7 +125,7 @@ func TestJSONSchemaObject_JSON_PreservesExtraProperties(t *testing.T) {
             "name": {
               "type": "string", 
               "description": "The name of the beverage", 
-              "examples": ["Coffee", "Tea", "Cappucino"]
+              "examples": ["Coffee", "Tea", "Cappuccino"]
             },
             "price": {
               "type": "number",
