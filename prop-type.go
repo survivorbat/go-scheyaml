@@ -27,11 +27,6 @@ var typeDefaultValues = map[PropType]string{
 	TypeArray:  "[]",
 }
 
-// DefaultValue returns a string representation of a zero value for the property type.
-func (p PropType) DefaultValue() string {
-	return typeDefaultValues[p]
-}
-
 // String turns PropType back into a string
 func (p PropType) String() string {
 	return string(p)

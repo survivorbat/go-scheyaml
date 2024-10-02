@@ -45,14 +45,13 @@ func TestConfig_ForProperty_ReturnsExpectedConfig(t *testing.T) {
 		},
 		"subproperty is returned with minimal=true if set on parent": {
 			input: &Config{
-				Minimal:        true,
-				ValueOverrides: map[string]any{"foo": map[string]any{"bar": "baz"}},
+				Minimal: true,
 			},
 			propertyName: "foo",
 
 			expected: &Config{
 				Minimal:        true,
-				ValueOverrides: map[string]any{"bar": "baz"},
+				ValueOverrides: map[string]any{},
 			},
 		},
 	}

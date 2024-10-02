@@ -5,7 +5,7 @@ arrayProperty:
       # - 12
       # - 25
       # - 62
-      magicNumber: 0 # Perform magic here
+      magicNumber: null # Perform magic here
 # Booleans are simple
 #
 # Examples:
