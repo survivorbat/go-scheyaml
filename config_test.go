@@ -15,6 +15,21 @@ func TestConfig_ForProperty_ReturnsExpectedConfig(t *testing.T) {
 
 		expected *Config
 	}{
+		"copies over 'simple' values from parent config": {
+			input: &Config{
+				TODOComment: "abc",
+				LineLength:  20,
+				OnlyRequired:     true,
+			},
+			propertyName: "foo",
+
+			expected: &Config{
+				TODOComment:    "abc",
+				LineLength:     20,
+				OnlyRequired:        true,
+				ValueOverrides: map[string]any{},
+			},
+		},
 		"non-existing property returns empty ValueOverrides": {
 			input:        &Config{},
 			propertyName: "does-not-exist",

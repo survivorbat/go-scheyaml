@@ -68,6 +68,7 @@ func TestJSONSchemaObject_YAMLExample_ReturnsExpectedMinimalVersion(t *testing.T
 	assert.Equal(t, string(expectedData), string(actualData))
 }
 
+// Catch-all for 'simple' overrides
 func TestJSONSchemaObject_YAMLExample_OverridesValuesFromConfig(t *testing.T) {
 	t.Parallel()
 	// Arrange
@@ -79,6 +80,7 @@ func TestJSONSchemaObject_YAMLExample_OverridesValuesFromConfig(t *testing.T) {
 
 	cfg := NewConfig()
 	cfg.TODOComment = "Perform magic here"
+	cfg.LineLength = 0
 	cfg.ValueOverrides = map[string]any{
 		"numberProperty": 84,
 		"objectProperty": map[string]any{
