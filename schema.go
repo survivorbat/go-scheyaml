@@ -16,7 +16,7 @@ var (
 	_ json.Unmarshaler = new(JSONSchema)
 )
 
-// JSONSchema is used to unmarshal the incoming JSON schema into, does not support anyOf an allOf (yet).
+// JSONSchema is used to unmarshal the incoming JSON schema into, does not support anyOf and allOf (yet).
 // It only features properties used in the ScheYAML process. It does preserve additional properties in the
 // json schema to unmarhsal/marshal without losing data.
 //
@@ -40,6 +40,9 @@ type JSONSchema struct {
 	// Items is only used if type is `array`
 	Items *JSONSchema `json:"items,omitempty"`
 
+	// Required properties set by parent object
+	Required []string `json:"required,omitempty"`
+
 	// misc contains all the leftover properties that we don't use, but want to preserve on a Unmarshal call
 	misc map[string]any `json:"-"`
 }
@@ -56,9 +59,24 @@ func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
 	switch j.Type {
 	case TypeObject:
 		result.Kind = yaml.MappingNode
-		result.Content = make([]*yaml.Node, len(j.Properties)*yamlNodesPerField)
-
 		properties := j.alphabeticalProperties()
+
+		// only keep required properties
+		if cfg.Minimal {
+			var requiredProperties []string
+			for _, property := range properties {
+				if j.Default == nil && slices.Contains(j.Required, property) {
+					requiredProperties = append(requiredProperties, property)
+				}
+			}
+			properties = requiredProperties
+
+			if len(properties) == 0 {
+				return result
+			}
+		}
+
+		result.Content = make([]*yaml.Node, len(properties)*yamlNodesPerField)
 
 		for index, propertyName := range properties {
 			property := j.Properties[propertyName]
@@ -82,7 +100,11 @@ func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
 			}
 
 			// The property value node
-			result.Content[index*yamlNodesPerField+1] = property.ScheYAML(cfg.forProperty(propertyName))
+			valueNode := property.ScheYAML(cfg.forProperty(propertyName))
+			if valueNode.Content == nil && valueNode.Kind == yaml.MappingNode {
+				valueNode.Value = "{}"
+			}
+			result.Content[index*yamlNodesPerField+1] = valueNode
 		}
 
 	case TypeArray:
@@ -101,13 +123,9 @@ func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
 		case j.Default != nil:
 			result.Value = fmt.Sprint(j.Default)
 
-		case j.Type == TypeString:
-			result.LineComment = cfg.TODOComment
-			result.SetString("")
-
 		default:
 			result.LineComment = cfg.TODOComment
-			result.Value = j.Type.DefaultValue()
+			result.Value = "null"
 		}
 	}
 

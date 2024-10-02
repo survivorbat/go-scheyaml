@@ -1,0 +1,38 @@
+{
+  "type": "object",
+  "properties": {
+    "requiredProperty": {
+      "type": "string"
+    },
+    "notRequiredProperty": {
+      "type": "string"
+    },
+    "nestedRequiredProperty": {
+      "type": "object",
+      "properties": {
+        "requiredProperty": {
+          "type": "string"
+        },
+        "notRequiredProperty": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "requiredProperty"
+      ]
+    },
+    "nestedNotRequiredProperty": {
+      "type": "object",
+      "properties": {
+        "notRequiredProperty": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "requiredProperty",
+    "nestedRequiredProperty",
+    "nestedNotRequiredProperty"
+  ]
+}

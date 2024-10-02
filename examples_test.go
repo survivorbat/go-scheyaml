@@ -51,7 +51,7 @@ func ExampleSchemaToYAML() {
 	//       # - Coffee
 	//       # - Tea
 	//       # - Cappucino
-	//       name: "" # TODO: Fill this in
+	//       name: null # TODO: Fill this in
 	//       # The price of the product
 	//       price: 4.5
 	// # The name of the customer
@@ -108,7 +108,7 @@ func ExampleSchemaToYAML_withOverrideValues() {
 	// Output:
 	// # A list of beverages the customer has consumed
 	// beverages:
-	//     - description: "" # Do something with this
+	//     - description: null # Do something with this
 	//       # The name of the beverage
 	//       #
 	//       # Examples:
@@ -171,7 +171,7 @@ func ExampleJSONSchema_ScheYAML() {
 	//       # - Coffee
 	//       # - Tea
 	//       # - Cappucino
-	//       name: "" # TODO: Fill this in
+	//       name: null # TODO: Fill this in
 	//       # The price of the product
 	//       price: 4.5
 	// # The name of the customer

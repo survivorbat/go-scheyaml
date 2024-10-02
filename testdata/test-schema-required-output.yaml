@@ -1,0 +1,4 @@
+nestedNotRequiredProperty: {}
+nestedRequiredProperty:
+    requiredProperty: null # TODO: Fill this in
+requiredProperty: null # TODO: Fill this in
