@@ -25,8 +25,8 @@ type Config struct {
 	// default in NewConfig but can be emptied to remove the comment altogether.
 	TODOComment string
 
-	// Minimal mode only renders properties which are required and have no default value
-	Minimal bool
+	// OnlyRequired properties are returned
+	OnlyRequired bool
 }
 
 // forProperty will construct a config object for the given property, allows for recursive
@@ -45,7 +45,7 @@ func (c *Config) forProperty(propertyName string) *Config {
 
 	return &Config{
 		TODOComment:    c.TODOComment,
-		Minimal:        c.Minimal,
+		OnlyRequired:   c.OnlyRequired,
 		ValueOverrides: valueOverrides,
 	}
 }
@@ -83,10 +83,9 @@ func WithTODOComment(comment string) Option {
 	}
 }
 
-// Minimal allows you to only return the minimal yaml file that needs to be filled in
-// by the user (only required properties with no default value)
-func Minimal() Option {
+// OnlyRequired properties are returned
+func OnlyRequired() Option {
 	return func(c *Config) {
-		c.Minimal = true
+		c.OnlyRequired = true
 	}
 }

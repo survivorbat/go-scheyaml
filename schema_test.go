@@ -49,7 +49,7 @@ func TestJSONSchemaObject_YAMLExample_ReturnsExpectedMinimalVersion(t *testing.T
 	require.NoError(t, err)
 
 	cfg := NewConfig()
-	cfg.Minimal = true
+	cfg.OnlyRequired = true
 
 	// Act
 	result := schemaObject.ScheYAML(cfg)
