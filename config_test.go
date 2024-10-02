@@ -17,16 +17,16 @@ func TestConfig_ForProperty_ReturnsExpectedConfig(t *testing.T) {
 	}{
 		"copies over 'simple' values from parent config": {
 			input: &Config{
-				TODOComment: "abc",
-				LineLength:  20,
-				OnlyRequired:     true,
+				TODOComment:  "abc",
+				LineLength:   20,
+				OnlyRequired: true,
 			},
 			propertyName: "foo",
 
 			expected: &Config{
 				TODOComment:    "abc",
 				LineLength:     20,
-				OnlyRequired:        true,
+				OnlyRequired:   true,
 				ValueOverrides: map[string]any{},
 			},
 		},

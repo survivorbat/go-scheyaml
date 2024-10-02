@@ -56,9 +56,9 @@ func (c *Config) forProperty(propertyName string) *Config {
 	}
 
 	return &Config{
-		TODOComment: c.TODOComment,
+		TODOComment:    c.TODOComment,
 		OnlyRequired:   c.OnlyRequired,
-		LineLength:  c.LineLength,
+		LineLength:     c.LineLength,
 		ValueOverrides: valueOverrides,
 	}
 }
