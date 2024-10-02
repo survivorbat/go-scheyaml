@@ -83,9 +83,9 @@ func WithTODOComment(comment string) Option {
 	}
 }
 
-// WithMinimal allows you to only return the minimal yaml file that needs to be filled in
+// Minimal allows you to only return the minimal yaml file that needs to be filled in
 // by the user (only required properties with no default value)
-func WithMinimal() Option {
+func Minimal() Option {
 	return func(c *Config) {
 		c.Minimal = true
 	}
