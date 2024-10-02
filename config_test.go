@@ -17,16 +17,16 @@ func TestConfig_ForProperty_ReturnsExpectedConfig(t *testing.T) {
 	}{
 		"copies over 'simple' values from parent config": {
 			input: &Config{
-				TODOComment: "abc",
-				LineLength:  20,
-				Minimal:     true,
+				TODOComment:  "abc",
+				LineLength:   20,
+				OnlyRequired: true,
 			},
 			propertyName: "foo",
 
 			expected: &Config{
 				TODOComment:    "abc",
 				LineLength:     20,
-				Minimal:        true,
+				OnlyRequired:   true,
 				ValueOverrides: map[string]any{},
 			},
 		},
@@ -56,6 +56,17 @@ func TestConfig_ForProperty_ReturnsExpectedConfig(t *testing.T) {
 
 			expected: &Config{
 				ValueOverrides: map[string]any{"bar": "baz"},
+			},
+		},
+		"subproperty is returned with OnlyRequired=true if set on parent": {
+			input: &Config{
+				OnlyRequired: true,
+			},
+			propertyName: "foo",
+
+			expected: &Config{
+				OnlyRequired:   true,
+				ValueOverrides: map[string]any{},
 			},
 		},
 	}

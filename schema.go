@@ -62,41 +62,33 @@ func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
 		result.Kind = yaml.MappingNode
 		properties := j.alphabeticalProperties()
 
-		// only keep required properties
-		if cfg.Minimal {
-			var requiredProperties []string
-			for _, property := range properties {
-				if j.Default == nil && slices.Contains(j.Required, property) {
-					requiredProperties = append(requiredProperties, property)
-				}
-			}
-			properties = requiredProperties
-
-			if len(properties) == 0 {
-				return result
+		var requiredProperties []string
+		for _, property := range properties {
+			if slices.Contains(j.Required, property) {
+				requiredProperties = append(requiredProperties, property)
 			}
 		}
 
-		result.Content = make([]*yaml.Node, len(properties)*yamlNodesPerField)
-
-		for index, propertyName := range properties {
+		result.Content = []*yaml.Node{}
+		for _, propertyName := range properties {
 			property := j.Properties[propertyName]
+			overrideValue, hasOverrideValue := cfg.overrideFor(propertyName)
+			if cfg.OnlyRequired && !hasOverrideValue && !slices.Contains(requiredProperties, propertyName) {
+				continue
+			}
 
 			// The property name node
-			result.Content[index*yamlNodesPerField] = &yaml.Node{
+			result.Content = append(result.Content, &yaml.Node{
 				Kind:        yaml.ScalarNode,
 				Value:       propertyName,
 				HeadComment: property.formatHeadComment(cfg.LineLength),
-			}
+			})
 
-			// Skip recursing further and override the value with whatever the config says
-			if overrideValue, ok := cfg.overrideFor(propertyName); ok {
-				// The property value node
-				result.Content[index*yamlNodesPerField+1] = &yaml.Node{
+			if hasOverrideValue {
+				result.Content = append(result.Content, &yaml.Node{
 					Kind:  yaml.ScalarNode,
 					Value: fmt.Sprint(overrideValue),
-				}
-
+				})
 				continue
 			}
 
@@ -105,7 +97,7 @@ func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
 			if valueNode.Content == nil && valueNode.Kind == yaml.MappingNode {
 				valueNode.Value = "{}"
 			}
-			result.Content[index*yamlNodesPerField+1] = valueNode
+			result.Content = append(result.Content, valueNode)
 		}
 
 	case TypeArray:

@@ -4,35 +4,46 @@
     "requiredProperty": {
       "type": "string"
     },
+    "requiredPropertyWithDefault": {
+      "type": "string",
+      "default": "default"
+    },
     "notRequiredProperty": {
       "type": "string"
     },
-    "nestedRequiredProperty": {
+    "requiredPropertyMapping": {
       "type": "object",
       "properties": {
         "requiredProperty": {
           "type": "string"
+        },
+        "requiredPropertyWithDefault": {
+          "type": "string",
+          "default": "default"
         },
         "notRequiredProperty": {
           "type": "string"
         }
       },
       "required": [
-        "requiredProperty"
+        "requiredProperty",
+        "requiredPropertyWithDefault"
       ]
     },
-    "nestedNotRequiredProperty": {
+    "requiredPropertyMappingWithoutRequiredChildren": {
       "type": "object",
       "properties": {
         "notRequiredProperty": {
           "type": "string"
         }
-      }
+      },
+      "required": []
     }
   },
   "required": [
     "requiredProperty",
-    "nestedRequiredProperty",
-    "nestedNotRequiredProperty"
+    "requiredPropertyWithDefault",
+    "requiredPropertyMapping",
+    "requiredPropertyMappingWithoutRequiredChildren"
   ]
 }

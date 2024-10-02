@@ -1,4 +1,6 @@
-nestedNotRequiredProperty: {}
-nestedRequiredProperty:
-    requiredProperty: null # TODO: Fill this in
 requiredProperty: null # TODO: Fill this in
+requiredPropertyMapping:
+    requiredProperty: null # TODO: Fill this in
+    requiredPropertyWithDefault: default
+requiredPropertyMappingWithoutRequiredChildren: {}
+requiredPropertyWithDefault: default
