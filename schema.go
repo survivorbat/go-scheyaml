@@ -134,7 +134,7 @@ func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
 }
 
 // formatHeadComment will generate the comment above the property with the description
-// and example values. the desc
+// and example values. The description will be word-wrapped in case it exceeds the given non-zero lineLength.
 func (j *JSONSchema) formatHeadComment(lineLength uint) string {
 	var builder strings.Builder
 
