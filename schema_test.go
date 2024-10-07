@@ -11,7 +11,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func TestJSONSchemaObject_YAMLExample_ReturnsExpectedNodesWithDefaults(t *testing.T) {
+func TestJSONSchemaObject_ScheYAML_ReturnsExpectedNodesWithDefaults(t *testing.T) {
 	t.Parallel()
 	// Arrange
 	inputData, _ := os.ReadFile(path.Join("testdata", "test-schema.json"))
@@ -39,7 +39,7 @@ func TestJSONSchemaObject_YAMLExample_ReturnsExpectedNodesWithDefaults(t *testin
 	assert.Equal(t, string(expectedData), string(actualData))
 }
 
-func TestJSONSchemaObject_YAMLExample_ReturnsExpectedMinimalVersion(t *testing.T) {
+func TestJSONSchemaObject_ScheYAML_ReturnsExpectedMinimalVersion(t *testing.T) {
 	t.Parallel()
 	// Arrange
 	inputData, _ := os.ReadFile(path.Join("testdata", "test-schema-required.json"))
@@ -69,7 +69,7 @@ func TestJSONSchemaObject_YAMLExample_ReturnsExpectedMinimalVersion(t *testing.T
 }
 
 // Catch-all for 'simple' overrides
-func TestJSONSchemaObject_YAMLExample_OverridesValuesFromConfig(t *testing.T) {
+func TestJSONSchemaObject_ScheYAML_OverridesValuesFromConfig(t *testing.T) {
 	t.Parallel()
 	// Arrange
 	inputData, _ := os.ReadFile(path.Join("testdata", "test-schema.json"))
