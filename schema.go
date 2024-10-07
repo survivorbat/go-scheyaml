@@ -48,11 +48,9 @@ type JSONSchema struct {
 	misc map[string]any `json:"-"`
 }
 
-// yamlNodesPerField exists to prevent a magic number, it specifies that for property 'foo' in `foo: bar`
-// 2 YAML nodes are required, one for 'foo' and one for 'bar'.
-const yamlNodesPerField = 2
-
 // ScheYAML turns the schema into an example yaml tree
+//
+//nolint:cyclop // I don't think this method is worth breaking up yet
 func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
 	result := new(yaml.Node)
 
@@ -89,6 +87,7 @@ func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
 					Kind:  yaml.ScalarNode,
 					Value: fmt.Sprint(overrideValue),
 				})
+
 				continue
 			}
 

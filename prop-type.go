@@ -14,19 +14,6 @@ const (
 	TypeObject PropType = "object"
 )
 
-// typeDefaultValues is a mapping of property types and string-based zero values in the output
-var typeDefaultValues = map[PropType]string{
-	TypeString:  "",
-	TypeInteger: "0",
-	TypeNumber:  "0",
-	TypeBoolean: "false",
-
-	// Unused, but to make it complete
-	TypeNull:   "null",
-	TypeObject: "{}",
-	TypeArray:  "[]",
-}
-
 // String turns PropType back into a string
 func (p PropType) String() string {
 	return string(p)
