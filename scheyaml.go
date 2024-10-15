@@ -42,5 +42,5 @@ func SchemaToNode(schema []byte, opts ...Option) (*yaml.Node, error) {
 		return nil, fmt.Errorf("failed to unmarshal schema to jsonSchema object: %w", err)
 	}
 
-	return schemaObject.ScheYAML(config), nil
+	return schemaObject.ScheYAML(config)
 }

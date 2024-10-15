@@ -2,14 +2,7 @@
   "type": "object",
   "properties": {
     "stringProperty": {
-      "type": "string",
-      "default": "Hello World!",
-      "description": "This property is for testing string Scalar nodes. On top of that, it will also check that this description wrapped into multiple new lines to keep it readable in the YAML output.\n\nAlso, native newlines in a description should be respected.",
-      "examples": [
-        "Hello",
-        "World",
-        "Foo"
-      ]
+      "$ref": "#/$defs/HelloWorld"
     },
     "integerProperty": {
       "type": "integer",
@@ -77,6 +70,18 @@
           }
         }
       }
+    }
+  },
+  "$defs": {
+    "HelloWorld": {
+      "type": "string",
+      "default": "Hello World!",
+      "description": "This property is for testing string Scalar nodes. On top of that, it will also check that this description wrapped into multiple new lines to keep it readable in the YAML output.\n\nAlso, native newlines in a description should be respected.",
+      "examples": [
+        "Hello",
+        "World",
+        "Foo"
+      ]
     }
   }
 }

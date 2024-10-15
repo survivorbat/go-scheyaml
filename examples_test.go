@@ -156,7 +156,11 @@ func ExampleJSONSchema_ScheYAML() {
 	var schemaObject JSONSchema
 	_ = json.Unmarshal([]byte(input), &schemaObject)
 
-	result := schemaObject.ScheYAML(NewConfig())
+	result, err := schemaObject.ScheYAML(NewConfig())
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 
 	yamlData, _ := yaml.Marshal(result)
 

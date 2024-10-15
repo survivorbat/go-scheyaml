@@ -45,4 +45,4 @@ objectProperty:
 # - Hello
 # - World
 # - Foo
-stringProperty: Hello World!
+stringProperty: null
