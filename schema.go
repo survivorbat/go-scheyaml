@@ -23,6 +23,12 @@ var (
 //
 // This object is part of the lower-level API, the package-level methods are for regular usage
 type JSONSchema struct {
+	// ID allows you to identify a schema, find more information here:
+	// https://json-schema.org/understanding-json-schema/structuring#schema-identification
+	//
+	// Currently remains unused in scheyaml
+	ID string `json:"$id,omitempty"`
+
 	// Type must always be set
 	Type PropType `json:"type"`
 
@@ -44,14 +50,23 @@ type JSONSchema struct {
 	// Required properties set by parent object
 	Required []string `json:"required,omitempty"`
 
+	// Ref may be used to reference other parts of the JSON schema, find more information here:
+	// https://json-schema.org/understanding-json-schema/structuring#schema-identification
+	Ref string `json:"$ref,omitempty"`
+
 	// misc contains all the leftover properties that we don't use, but want to preserve on a Unmarshal call
 	misc map[string]any `json:"-"`
 }
 
 // ScheYAML turns the schema into an example yaml tree
 //
-//nolint:cyclop // I don't think this method is worth breaking up yet
-func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
+//nolint:cyclop,gocognit // I don't think this method is worth breaking up yet
+func (j *JSONSchema) ScheYAML(cfg *Config) (*yaml.Node, error) {
+	// Make sure the first iteration this is set
+	if cfg.rootSchema == nil {
+		cfg.rootSchema = j
+	}
+
 	result := new(yaml.Node)
 
 	//nolint:exhaustive // Not necessary, only array, null and object get special treatment
@@ -75,6 +90,11 @@ func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
 				continue
 			}
 
+			// Hydrate the schema if refs are used
+			if err := property.ResolveRef(cfg); err != nil {
+				return nil, fmt.Errorf("failed to resolve '%s': %w", property.Ref, err)
+			}
+
 			// The property name node
 			result.Content = append(result.Content, &yaml.Node{
 				Kind:        yaml.ScalarNode,
@@ -83,6 +103,11 @@ func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
 			})
 
 			if hasOverrideValue {
+				// Otherwise it'd make it <nil>
+				if overrideValue == nil {
+					overrideValue = TypeNull.String()
+				}
+
 				result.Content = append(result.Content, &yaml.Node{
 					Kind:  yaml.ScalarNode,
 					Value: fmt.Sprint(overrideValue),
@@ -92,20 +117,30 @@ func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
 			}
 
 			// The property value node
-			valueNode := property.ScheYAML(cfg.forProperty(propertyName))
+			valueNode, err := property.ScheYAML(cfg.forProperty(propertyName))
+			if err != nil {
+				return nil, fmt.Errorf("failed to scheyaml property '%s': %w", propertyName, err)
+			}
+
 			if valueNode.Content == nil && valueNode.Kind == yaml.MappingNode {
 				valueNode.Value = "{}"
 			}
+
 			result.Content = append(result.Content, valueNode)
 		}
 
 	case TypeArray:
 		result.Kind = yaml.SequenceNode
-		result.Content = []*yaml.Node{j.Items.ScheYAML(cfg)}
+		itemSchema, err := j.Items.ScheYAML(cfg)
+		if err != nil {
+			return nil, fmt.Errorf("could not scheyaml 'items': %w", err)
+		}
+
+		result.Content = []*yaml.Node{itemSchema}
 
 	case TypeNull:
 		result.Kind = yaml.ScalarNode
-		result.Value = "null"
+		result.Value = TypeNull.String()
 
 	// Leftover options: string, number, integer, boolean
 	default:
@@ -117,11 +152,11 @@ func (j *JSONSchema) ScheYAML(cfg *Config) *yaml.Node {
 
 		default:
 			result.LineComment = cfg.TODOComment
-			result.Value = "null"
+			result.Value = TypeNull.String()
 		}
 	}
 
-	return result
+	return result, nil
 }
 
 // formatHeadComment will generate the comment above the property with the description
@@ -172,6 +207,37 @@ func (j *JSONSchema) alphabeticalProperties() []string {
 	return result
 }
 
+// ResolveRef may be called to hydrate the current schema with its referenced properties. This
+// is not done by default as we don't want to spam HTTP requests during the unmarshal step, however,
+// calls such as ScheYAML will trigger these.
+//
+// These hydrated properties _will not_ be marshalled back into their schema counterpart,
+// read the UnmarshalJSON docstring for more information.
+func (j *JSONSchema) ResolveRef(cfg *Config) error {
+	if j.Ref == "" {
+		return nil
+	}
+
+	referencedSchema, err := lookupSchemaRef(cfg.rootSchema, j.Ref)
+	if err != nil {
+		return fmt.Errorf("failed to lookup '%s': %w", j.Ref, err)
+	}
+
+	j.ID = referencedSchema.ID
+	j.Type = referencedSchema.Type
+	j.Default = referencedSchema.Default
+	j.Description = referencedSchema.Description
+	j.Examples = referencedSchema.Examples
+	j.Properties = referencedSchema.Properties
+	j.Items = referencedSchema.Items
+	j.Required = referencedSchema.Required
+
+	// To allow deeper references, not for serialisation
+	j.misc = referencedSchema.misc
+
+	return nil
+}
+
 // safeJSONSchema does not inherit UnmarshalJSON or MarshalJSON, so it won't recursively call itself
 type safeJSONSchema JSONSchema
 
@@ -192,8 +258,16 @@ func (j *JSONSchema) UnmarshalJSON(input []byte) error {
 	return nil
 }
 
-// MarshalJSON overrides the usual json behaviour to read data from the `misc` field.
+// MarshalJSON overrides the usual json behaviour to read data from the `misc` field and override
+// whatever's in there with the available properties in the object.
+//
+// If a $ref is set on the object, all other properties (including misc) are ignored. This behaviour is described here:
+// https://datatracker.ietf.org/doc/html/draft-pbryan-zyp-json-ref-03#section-3
 func (j *JSONSchema) MarshalJSON() ([]byte, error) {
+	if j.Ref != "" {
+		return []byte(`{"$ref": "` + j.Ref + `"}`), nil
+	}
+
 	result := j.misc
 
 	rawData, err := json.Marshal(safeJSONSchema(*j))
