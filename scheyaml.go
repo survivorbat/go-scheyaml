@@ -1,9 +1,9 @@
 package scheyaml
 
 import (
-	"encoding/json"
 	"fmt"
 
+	"github.com/kaptinlin/jsonschema"
 	"gopkg.in/yaml.v3"
 )
 
@@ -11,12 +11,8 @@ import (
 // `description` and `examples` for documentation, `default` for default values and `properties` for listing blocks.
 //
 // You may provide options to customise the output.
-func SchemaToYAML(schema []byte, opts ...Option) ([]byte, error) {
-	rootNode, err := SchemaToNode(schema, opts...)
-	if err != nil {
-		// Not wrapping the error because that was already done
-		return nil, err
-	}
+func SchemaToYAML(schema *jsonschema.Schema, opts ...Option) ([]byte, error) {
+	rootNode := SchemaToNode(schema, opts...)
 
 	result, err := yaml.Marshal(&rootNode)
 	if err != nil {
@@ -30,17 +26,12 @@ func SchemaToYAML(schema []byte, opts ...Option) ([]byte, error) {
 // marshalled YAML.
 //
 // You may provide options to customise the output.
-func SchemaToNode(schema []byte, opts ...Option) (*yaml.Node, error) {
+func SchemaToNode(schema *jsonschema.Schema, opts ...Option) *yaml.Node {
 	config := NewConfig()
 
 	for _, opt := range opts {
 		opt(config)
 	}
 
-	var schemaObject JSONSchema
-	if err := json.Unmarshal(schema, &schemaObject); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal schema to jsonSchema object: %w", err)
-	}
-
-	return schemaObject.ScheYAML(config)
+	return scheYAML(schema, config)
 }

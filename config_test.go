@@ -20,7 +20,6 @@ func TestConfig_ForProperty_ReturnsExpectedConfig(t *testing.T) {
 				TODOComment:  "abc",
 				LineLength:   20,
 				OnlyRequired: true,
-				rootSchema:   &JSONSchema{Required: []string{"abc"}},
 			},
 			propertyName: "foo",
 
@@ -29,7 +28,6 @@ func TestConfig_ForProperty_ReturnsExpectedConfig(t *testing.T) {
 				LineLength:     20,
 				OnlyRequired:   true,
 				ValueOverrides: map[string]any{},
-				rootSchema:     &JSONSchema{Required: []string{"abc"}},
 			},
 		},
 		"non-existing property returns empty ValueOverrides": {
