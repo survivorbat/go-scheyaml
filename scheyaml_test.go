@@ -5,6 +5,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/kaptinlin/jsonschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/yaml.v3"
@@ -15,8 +16,12 @@ func TestSchemaToYAML_ReturnsExpectedOutput(t *testing.T) {
 	// Arrange
 	inputData, _ := os.ReadFile(path.Join("testdata", "test-schema.json"))
 
+	compiler := jsonschema.NewCompiler()
+	schema, err := compiler.Compile(inputData)
+	require.NoError(t, err)
+
 	// Act
-	result, err := SchemaToYAML(inputData)
+	result, err := SchemaToYAML(schema)
 
 	// Assert
 	require.NoError(t, err)
@@ -35,12 +40,14 @@ func TestSchemaToNode_ReturnsExpectedOutput(t *testing.T) {
 	// Arrange
 	inputData, _ := os.ReadFile(path.Join("testdata", "test-schema.json"))
 
-	// Act
-	result, err := SchemaToNode(inputData)
-
-	// Assert
+	compiler := jsonschema.NewCompiler()
+	schema, err := compiler.Compile(inputData)
 	require.NoError(t, err)
 
+	// Act
+	result := SchemaToNode(schema)
+
+	// Assert
 	expectedData, _ := os.ReadFile(path.Join("testdata", "test-schema-output-defaults.yaml"))
 
 	actualData, err := yaml.Marshal(result)

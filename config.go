@@ -39,11 +39,6 @@ type Config struct {
 	// LineLength prevents descriptions and unreasonably long lines. Can be disabled
 	// completely by setting it to 0.
 	LineLength uint
-
-	// rootSchema is used to keep track of the root of the schema we're traversing, in case
-	// we want to use lookups to find a $ref. Not exported as users aren't meant to tinker
-	// with this value yet.
-	rootSchema *JSONSchema
 }
 
 // forProperty will construct a config object for the given property, allows for recursive
@@ -65,8 +60,6 @@ func (c *Config) forProperty(propertyName string) *Config {
 		OnlyRequired:   c.OnlyRequired,
 		LineLength:     c.LineLength,
 		ValueOverrides: valueOverrides,
-
-		rootSchema: c.rootSchema,
 	}
 }
 
