@@ -59,8 +59,13 @@ func scheYAML(rootSchema *jsonschema.Schema, cfg *Config) *yaml.Node {
 }
 
 // scheYAMLObject encapsulates the logic to scheYAML a schema of type "object"
+//
+//nolint:cyclop // Acceptable complexity, splitting this up is overkill
 func scheYAMLObject(rootSchema *jsonschema.Schema, cfg *Config) []*yaml.Node {
-	var result []*yaml.Node
+	// If no properties were defined (somehow), return an empty object
+	if rootSchema.Properties == nil {
+		return []*yaml.Node{{Kind: yaml.MappingNode, Value: "{}"}}
+	}
 
 	properties := alphabeticalProperties(rootSchema)
 
@@ -70,6 +75,9 @@ func scheYAMLObject(rootSchema *jsonschema.Schema, cfg *Config) []*yaml.Node {
 			requiredProperties = append(requiredProperties, property)
 		}
 	}
+
+	//nolint:prealloc // We can't, false positive
+	var result []*yaml.Node
 
 	for _, propertyName := range properties {
 		property := (*rootSchema.Properties)[propertyName]
