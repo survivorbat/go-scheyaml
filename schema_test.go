@@ -68,6 +68,44 @@ func TestScheYAML_ReturnsExpectedMinimalVersion(t *testing.T) {
 	assert.Equal(t, string(expectedData), string(actualData))
 }
 
+func TestScheYAML_ResolvesReferencesAtTheRootLevel(t *testing.T) {
+	t.Parallel()
+	// Arrange
+	inputData := `{
+  "$ref": "#/$defs/MySchema",
+  "$defs": {
+    "MySchema": {
+      "type": "object",
+      "properties": {
+        "name": {"type": "string", "default": "Hello World"}
+      }
+    }
+  }
+}`
+
+	compiler := jsonschema.NewCompiler()
+	schema, err := compiler.Compile([]byte(inputData))
+	require.NoError(t, err)
+
+	cfg := NewConfig()
+
+	// Act
+	result := scheYAML(schema, cfg)
+
+	// Assert
+	expectedData := "name: Hello World\n"
+
+	// Raw YAML from the node
+	actualData, err := yaml.Marshal(&result)
+	require.NoError(t, err)
+
+	// First test the data itself, and quit if it isn't as expected.
+	require.YAMLEq(t, expectedData, string(actualData))
+
+	// If the properties are as expected, test the comments
+	assert.Equal(t, expectedData, string(actualData))
+}
+
 // Catch-all for 'simple' overrides
 func TestScheYAML_OverridesValuesFromConfig(t *testing.T) {
 	t.Parallel()

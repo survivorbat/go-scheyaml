@@ -14,10 +14,13 @@ import (
 const nullValue = "null"
 
 // scheYAML turns the schema into an example yaml tree, using fields such as default, description and examples.
-//
-//nolint:cyclop,gocognit // Perhaps in the future the code can be broken up in more pieces
 func scheYAML(rootSchema *jsonschema.Schema, cfg *Config) *yaml.Node {
 	result := new(yaml.Node)
+
+	// If we're dealing with a reference, we'll continue with a resolved version of it
+	if rootSchema.Ref != "" {
+		return scheYAML(rootSchema.ResolvedRef, cfg)
+	}
 
 	// This is to prevent a slice out of bounds panic, but shouldn't happen under normal circumstances
 	if len(rootSchema.Type) == 0 {
@@ -28,59 +31,7 @@ func scheYAML(rootSchema *jsonschema.Schema, cfg *Config) *yaml.Node {
 	switch rootSchema.Type[0] {
 	case "object":
 		result.Kind = yaml.MappingNode
-		properties := alphabeticalProperties(rootSchema)
-
-		var requiredProperties []string
-		for _, property := range properties {
-			if slices.Contains(rootSchema.Required, property) {
-				requiredProperties = append(requiredProperties, property)
-			}
-		}
-
-		result.Content = []*yaml.Node{}
-		for _, propertyName := range properties {
-			property := (*rootSchema.Properties)[propertyName]
-			overrideValue, hasOverrideValue := cfg.overrideFor(propertyName)
-			if cfg.OnlyRequired && !hasOverrideValue && !slices.Contains(requiredProperties, propertyName) {
-				continue
-			}
-
-			// Make sure that references are resolved on evaluation
-			if property.Ref != "" {
-				property = property.ResolvedRef
-			}
-
-			// The property name node
-			result.Content = append(result.Content, &yaml.Node{
-				Kind:        yaml.ScalarNode,
-				Value:       propertyName,
-				HeadComment: formatHeadComment(property, cfg.LineLength),
-			})
-
-			if hasOverrideValue {
-				// Otherwise it'd make it <nil>
-				if overrideValue == nil {
-					overrideValue = nullValue
-				}
-
-				// The property value node
-				result.Content = append(result.Content, &yaml.Node{
-					Kind:  yaml.ScalarNode,
-					Value: fmt.Sprint(overrideValue),
-				})
-
-				continue
-			}
-
-			// The property value node
-			valueNode := scheYAML(property, cfg.forProperty(propertyName))
-
-			if valueNode.Content == nil && valueNode.Kind == yaml.MappingNode {
-				valueNode.Value = "{}"
-			}
-
-			result.Content = append(result.Content, valueNode)
-		}
+		result.Content = scheYAMLObject(rootSchema, cfg)
 
 	case "array":
 		result.Kind = yaml.SequenceNode
@@ -102,6 +53,66 @@ func scheYAML(rootSchema *jsonschema.Schema, cfg *Config) *yaml.Node {
 			result.LineComment = cfg.TODOComment
 			result.Value = nullValue
 		}
+	}
+
+	return result
+}
+
+// scheYAMLObject encapsulates the logic to scheYAML a schema of type "object"
+func scheYAMLObject(rootSchema *jsonschema.Schema, cfg *Config) []*yaml.Node {
+	var result []*yaml.Node
+
+	properties := alphabeticalProperties(rootSchema)
+
+	var requiredProperties []string
+	for _, property := range properties {
+		if slices.Contains(rootSchema.Required, property) {
+			requiredProperties = append(requiredProperties, property)
+		}
+	}
+
+	for _, propertyName := range properties {
+		property := (*rootSchema.Properties)[propertyName]
+		overrideValue, hasOverrideValue := cfg.overrideFor(propertyName)
+		if cfg.OnlyRequired && !hasOverrideValue && !slices.Contains(requiredProperties, propertyName) {
+			continue
+		}
+
+		// Make sure that references are resolved on evaluation
+		if property.Ref != "" {
+			property = property.ResolvedRef
+		}
+
+		// The property name node
+		result = append(result, &yaml.Node{
+			Kind:        yaml.ScalarNode,
+			Value:       propertyName,
+			HeadComment: formatHeadComment(property, cfg.LineLength),
+		})
+
+		if hasOverrideValue {
+			// Otherwise it'd make it <nil>
+			if overrideValue == nil {
+				overrideValue = nullValue
+			}
+
+			// The property value node
+			result = append(result, &yaml.Node{
+				Kind:  yaml.ScalarNode,
+				Value: fmt.Sprint(overrideValue),
+			})
+
+			continue
+		}
+
+		// The property value node
+		valueNode := scheYAML(property, cfg.forProperty(propertyName))
+
+		if valueNode.Content == nil && valueNode.Kind == yaml.MappingNode {
+			valueNode.Value = "{}"
+		}
+
+		result = append(result, valueNode)
 	}
 
 	return result
