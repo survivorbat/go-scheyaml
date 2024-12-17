@@ -37,6 +37,8 @@ objectProperty:
     # - b
     # - d
     deepPropertyWithoutDescription: b
+    # Pattern property test
+    anotherProperty: Added by pattern property
 # This property is for testing string Scalar nodes. On top of that, it will also check that this description wrapped into multiple new lines to keep it readable in the YAML output.
 #
 # Also, native newlines in a description should be respected.

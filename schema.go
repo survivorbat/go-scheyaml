@@ -2,6 +2,7 @@ package scheyaml
 
 import (
 	"fmt"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -14,7 +15,7 @@ import (
 const nullValue = "null"
 
 // scheYAML turns the schema into an example yaml tree, using fields such as default, description and examples.
-func scheYAML(rootSchema *jsonschema.Schema, cfg *Config) *yaml.Node {
+func scheYAML(rootSchema *jsonschema.Schema, cfg *Config) (*yaml.Node, error) {
 	result := new(yaml.Node)
 
 	// If we're dealing with a reference, we'll continue with a resolved version of it
@@ -24,18 +25,28 @@ func scheYAML(rootSchema *jsonschema.Schema, cfg *Config) *yaml.Node {
 
 	// This is to prevent a slice out of bounds panic, but shouldn't happen under normal circumstances
 	if len(rootSchema.Type) == 0 {
-		return result
+		return result, nil
 	}
 
 	// TODO: Currently we default to the first type in the list, if more types are defined they are ignored
 	switch rootSchema.Type[0] {
 	case "object":
 		result.Kind = yaml.MappingNode
-		result.Content = scheYAMLObject(rootSchema, cfg)
+		objectContent, err := scheYAMLObject(rootSchema, cfg)
+		if err != nil {
+			return nil, err
+		}
+
+		result.Content = objectContent
 
 	case "array":
 		result.Kind = yaml.SequenceNode
-		result.Content = []*yaml.Node{scheYAML(rootSchema.Items, cfg)}
+		arrayContent, err := scheYAML(rootSchema.Items, cfg)
+		if err != nil {
+			return nil, err
+		}
+
+		result.Content = []*yaml.Node{arrayContent}
 
 	case nullValue:
 		result.Kind = yaml.ScalarNode
@@ -55,32 +66,37 @@ func scheYAML(rootSchema *jsonschema.Schema, cfg *Config) *yaml.Node {
 		}
 	}
 
-	return result
+	return result, nil
 }
 
 // scheYAMLObject encapsulates the logic to scheYAML a schema of type "object"
 //
 //nolint:cyclop // Acceptable complexity, splitting this up is overkill
-func scheYAMLObject(rootSchema *jsonschema.Schema, cfg *Config) []*yaml.Node {
+func scheYAMLObject(schema *jsonschema.Schema, cfg *Config) ([]*yaml.Node, error) {
 	// If no properties were defined (somehow), return an empty object
-	if rootSchema.Properties == nil {
-		return []*yaml.Node{{Kind: yaml.MappingNode, Value: "{}"}}
+	if schema.Properties == nil {
+		return []*yaml.Node{{Kind: yaml.MappingNode, Value: "{}"}}, nil
 	}
 
-	properties := alphabeticalProperties(rootSchema)
+	properties := alphabeticalProperties(schema)
 
 	var requiredProperties []string
 	for _, property := range properties {
-		if slices.Contains(rootSchema.Required, property) {
+		if slices.Contains(schema.Required, property) {
 			requiredProperties = append(requiredProperties, property)
 		}
+	}
+
+	patternProperties, err := determinePatternProperties(schema, cfg)
+	if err != nil {
+		return nil, fmt.Errorf("failed to scheyaml pattern properties: %w", err)
 	}
 
 	//nolint:prealloc // We can't, false positive
 	var result []*yaml.Node
 
 	for _, propertyName := range properties {
-		property := (*rootSchema.Properties)[propertyName]
+		property := (*schema.Properties)[propertyName]
 		overrideValue, hasOverrideValue := cfg.overrideFor(propertyName)
 		if cfg.OnlyRequired && !hasOverrideValue && !slices.Contains(requiredProperties, propertyName) {
 			continue
@@ -114,16 +130,55 @@ func scheYAMLObject(rootSchema *jsonschema.Schema, cfg *Config) []*yaml.Node {
 		}
 
 		// The property value node
-		valueNode := scheYAML(property, cfg.forProperty(propertyName))
+		valueNode, err := scheYAML(property, cfg.forProperty(propertyName))
+		if err != nil {
+			return nil, fmt.Errorf("failed to scheyaml %q: %w", propertyName, err)
+		}
 
 		if valueNode.Content == nil && valueNode.Kind == yaml.MappingNode {
 			valueNode.Value = "{}"
 		}
 
+		if patternNodes, ok := patternProperties[propertyName]; ok {
+			valueNode.Content = append(valueNode.Content, patternNodes...)
+		}
+
 		result = append(result, valueNode)
 	}
 
-	return result
+	return result, nil
+}
+
+// determinePatternProperties's purpose is to generate additional nodes for properties that match
+// defined patternProperties in the schema
+func determinePatternProperties(schema *jsonschema.Schema, cfg *Config) (map[string][]*yaml.Node, error) {
+	result := make(map[string][]*yaml.Node)
+
+	if schema.Properties == nil || schema.PatternProperties == nil {
+		return result, nil
+	}
+
+	properties := maps.Keys(*schema.Properties)
+
+	for regex, patternProperty := range *schema.PatternProperties {
+		parsedRegex, err := regexp.Compile(regex)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse %q as a regex: %w", regex, err)
+		}
+
+		for _, property := range properties {
+			if !parsedRegex.MatchString(property) {
+				continue
+			}
+
+			result[property], err = scheYAMLObject(patternProperty, cfg)
+			if err != nil {
+				return nil, fmt.Errorf("failed to scheyaml %q: %w", regex, err)
+			}
+		}
+	}
+
+	return result, nil
 }
 
 // formatHeadComment will generate the comment above the property with the description

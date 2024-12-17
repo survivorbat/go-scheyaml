@@ -45,9 +45,11 @@ func TestSchemaToNode_ReturnsExpectedOutput(t *testing.T) {
 	require.NoError(t, err)
 
 	// Act
-	result := SchemaToNode(schema)
+	result, err := SchemaToNode(schema)
 
 	// Assert
+	require.NoError(t, err)
+
 	expectedData, _ := os.ReadFile(path.Join("testdata", "test-schema-output-defaults.yaml"))
 
 	actualData, err := yaml.Marshal(result)

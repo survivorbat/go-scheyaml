@@ -23,9 +23,11 @@ func TestScheYAML_ReturnsExpectedNodesWithDefaults(t *testing.T) {
 	cfg := NewConfig()
 
 	// Act
-	result := scheYAML(schema, cfg)
+	result, err := scheYAML(schema, cfg)
 
 	// Assert
+	require.NoError(t, err)
+
 	expectedData, _ := os.ReadFile(path.Join("testdata", "test-schema-output-defaults.yaml"))
 
 	// Raw YAML from the node
@@ -52,9 +54,11 @@ func TestScheYAML_ReturnsExpectedMinimalVersion(t *testing.T) {
 	cfg.OnlyRequired = true
 
 	// Act
-	result := scheYAML(schema, cfg)
+	result, err := scheYAML(schema, cfg)
 
 	// Assert
+	require.NoError(t, err)
+
 	expectedData, _ := os.ReadFile(path.Join("testdata", "test-schema-required-output.yaml"))
 
 	// Raw YAML from the node
@@ -90,9 +94,11 @@ func TestScheYAML_ResolvesReferencesAtTheRootLevel(t *testing.T) {
 	cfg := NewConfig()
 
 	// Act
-	result := scheYAML(schema, cfg)
+	result, err := scheYAML(schema, cfg)
 
 	// Assert
+	require.NoError(t, err)
+
 	expectedData := "name: Hello World\n"
 
 	// Raw YAML from the node
@@ -126,9 +132,11 @@ func TestScheYAML_ReturnsEmptyObjectOnNoProperties(t *testing.T) {
 	cfg := NewConfig()
 
 	// Act
-	result := scheYAML(schema, cfg)
+	result, err := scheYAML(schema, cfg)
 
 	// Assert
+	require.NoError(t, err)
+
 	expectedData := "# Person\nperson: {}\n"
 
 	// Raw YAML from the node
@@ -164,9 +172,11 @@ func TestScheYAML_OverridesValuesFromConfig(t *testing.T) {
 	}
 
 	// Act
-	result := scheYAML(schema, cfg)
+	result, err := scheYAML(schema, cfg)
 
 	// Assert
+	require.NoError(t, err)
+
 	expectedData, _ := os.ReadFile(path.Join("testdata", "test-schema-output-overrides.yaml"))
 
 	// Raw YAML from the node

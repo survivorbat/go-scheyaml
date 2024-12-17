@@ -1,5 +1,16 @@
 {
   "type": "object",
+  "patternProperties": {
+    "^object.*$": {
+      "properties": {
+        "anotherProperty": {
+          "type": "string",
+          "description": "Pattern property test",
+          "default": "Added by pattern property"
+        }
+      }
+    }
+  },
   "properties": {
     "stringProperty": {
       "$ref": "#/$defs/HelloWorld"

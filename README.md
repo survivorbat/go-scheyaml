@@ -21,9 +21,9 @@ Check out [this example](./examples_test.go)
 - [x] Object type
 - [x] Array
 - [x] Refs
+- [x] Pattern Properties
 - [ ] AnyOf
 - [ ] AllOf
-- [ ] Pattern Properties
 
 ## 🔭 Plans
 
