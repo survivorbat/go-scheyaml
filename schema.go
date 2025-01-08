@@ -15,6 +15,8 @@ import (
 const nullValue = "null"
 
 // scheYAML turns the schema into an example yaml tree, using fields such as default, description and examples.
+//
+//nolint:cyclop // Slightly higher than allowed, but readable enough
 func scheYAML(rootSchema *jsonschema.Schema, cfg *Config) (*yaml.Node, error) {
 	result := new(yaml.Node)
 
