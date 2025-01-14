@@ -1,0 +1,33 @@
+# service-name set with override
+service-name: scheyaml
+
+# tracing-name unset so default should be used
+# tracing-name: myapp.localhost
+
+# lifecycle-name is not a known property but captured
+# by pattern properties (and thus valid)
+lifecycle-name: scheyaml-acc
+
+# friendly-name is not a known property but captured
+# by pattern properties but should be overwritten by
+# its default value
+friendly-name: null
+
+#service-config set with override
+service-config:
+  # name is a property defined by the pattern which
+  # has a default value of 'unset'
+  name: scheyaml-config # TODO inherited default required
+
+  # port is a property defined on properties with a default
+  # value of 8080
+  port: 8081
+
+  # source is a duplicate of pattern properties
+  source:
+    git: null
+    sha: some.sha
+
+# should match the pattern properties to fill in the
+# name and source properties
+tracing-config: {}

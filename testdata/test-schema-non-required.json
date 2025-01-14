@@ -1,0 +1,18 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "type": "object",
+  "required": [
+    "config"
+  ],
+  "properties": {
+    "config": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "default": "hello world"
+        }
+      }
+    }
+  }
+}

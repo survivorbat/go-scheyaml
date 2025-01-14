@@ -1,6 +1,6 @@
 module github.com/survivorbat/go-scheyaml
 
-go 1.22.5
+go 1.23.1
 
 require (
 	github.com/stretchr/testify v1.9.0

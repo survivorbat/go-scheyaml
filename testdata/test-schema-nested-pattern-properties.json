@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Config",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "service-name": {
+      "type": "string",
+      "default": "myapp"
+    },
+    "tracing-name": {
+      "type": "string",
+      "default": "myapp.localhost"
+    },
+    "service-config": {
+      "type": "object",
+      "required": [
+        "host",
+        "port"
+      ],
+      "properties": {
+        "host": {
+          "type": "string",
+          "default": "localhost"
+        },
+        "port": {
+          "type": "integer",
+          "default": 8080
+        },
+        "source": {
+          "type": "object",
+          "properties": {
+            "git": {
+              "type": "string"
+            },
+            "sha": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "patternProperties": {
+    "^.*-name$": {
+      "type": "string",
+      "default": "unset"
+    },
+    "^.*-config$": {
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "source"
+      ],
+      "additionalProperties": true,
+      "properties": {
+        "name": {
+          "type": "string",
+          "default": "unset"
+        },
+        "version": {
+          "type": "string",
+          "default": "1.0"
+        },
+        "source": {
+          "type": "object",
+          "required": [
+            "git",
+            "sha"
+          ],
+          "properties": {
+            "git": {
+              "type": "string",
+              "default": "dev.azure.com"
+            },
+            "sha": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

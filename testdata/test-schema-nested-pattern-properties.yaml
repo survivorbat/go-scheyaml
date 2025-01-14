@@ -1,0 +1,18 @@
+friendly-name: unset
+lifecycle-name: scheyaml-acc
+service-config:
+    host: localhost
+    name: scheyaml-config
+    port: 8081
+    source:
+        git: dev.azure.com
+        sha: some.sha
+    version: 1.0
+service-name: scheyaml
+tracing-config:
+    name: unset
+    source:
+        git: dev.azure.com
+        sha: null # TODO: Fill this in
+    version: 1.0
+tracing-name: myapp.localhost
