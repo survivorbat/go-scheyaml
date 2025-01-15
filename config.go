@@ -187,7 +187,7 @@ func asSliceAny(input any) ([]any, bool) {
 	if value, isSlice := input.([]any); isSlice {
 		return value, true
 	} else if reflect.TypeOf(input).ConvertibleTo(reflect.TypeOf([]any{})) {
-		return reflect.ValueOf(input).Convert(reflect.TypeOf([]any{})).Interface().([]any), true
+		return reflect.ValueOf(input).Convert(reflect.TypeOf([]any{})).Interface().([]any), true //nolint:forcetypeassert // converted type
 	}
 
 	// fallback to reflect
@@ -214,7 +214,7 @@ func asMapStringAny(input any) (map[string]any, bool) {
 	if value, isMap := input.(map[string]any); isMap {
 		return value, true
 	} else if reflect.TypeOf(input).ConvertibleTo(reflect.TypeOf(map[string]any{})) {
-		return reflect.ValueOf(input).Convert(reflect.TypeOf(map[string]any{})).Interface().(map[string]any), true
+		return reflect.ValueOf(input).Convert(reflect.TypeOf(map[string]any{})).Interface().(map[string]any), true //nolint:forcetypeassert // converted type
 	}
 
 	return nil, false

@@ -3,6 +3,8 @@ package scheyaml
 import (
 	"bytes"
 	"fmt"
+	"maps"
+	"slices"
 	"strings"
 
 	"github.com/kaptinlin/jsonschema"
@@ -17,8 +19,8 @@ type InvalidSchemaError struct {
 // Error is a multiline string of the string->jsonschema.EvaluationError
 func (e InvalidSchemaError) Error() string {
 	var builder strings.Builder
-	for k, v := range e.Errors {
-		builder.WriteString(fmt.Sprintf("%s: %s\n", k, v))
+	for _, key := range slices.Sorted(maps.Keys(e.Errors)) {
+		builder.WriteString(fmt.Sprintf("%s: %s\n", key, e.Errors[key]))
 	}
 
 	return builder.String()

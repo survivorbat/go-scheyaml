@@ -1,10 +1,10 @@
 package scheyaml
 
 import (
+	"maps"
 	"slices"
 
 	"github.com/kaptinlin/jsonschema"
-	"golang.org/x/exp/maps"
 )
 
 // nullable iff the schema is not nil, has only two types where the second type is 'null'
@@ -48,7 +48,7 @@ func unique[S ~[]E, E comparable](s S) []E {
 		track[e] = true
 	}
 
-	return maps.Keys(track)
+	return slices.Collect(maps.Keys(track))
 }
 
 // coalesce returns the first value that matches the predicate or _, false if no value matches the predicate

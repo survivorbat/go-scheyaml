@@ -3,6 +3,7 @@ package scheyaml
 import (
 	"errors"
 	"fmt"
+	"maps"
 	"regexp"
 	"slices"
 	"sort"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/kaptinlin/jsonschema"
 	"github.com/mitchellh/go-wordwrap"
-	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
 
@@ -130,15 +130,15 @@ func scheYAMLObject(schema *jsonschema.Schema, cfg *Config) ([]*yaml.Node, error
 	// properties is the join of the schema properties and the supplied overrides (which potentially match pattern properties)
 	var properties []string
 	if p := schema.Properties; p != nil && len(*p) > 0 {
-		properties = append(properties, maps.Keys(*p)...)
+		properties = append(properties, slices.Collect(maps.Keys(*p))...)
 	}
 	if overrides := cfg.ValueOverrides; len(overrides) > 0 {
-		properties = append(properties, maps.Keys(overrides)...)
+		properties = append(properties, slices.Collect(maps.Keys(overrides))...)
 	}
 	if inherited := cfg.PatternProperties; len(inherited) > 0 {
 		for _, patternschema := range inherited {
 			if p := patternschema.Properties; p != nil && len(*p) > 0 {
-				properties = append(properties, maps.Keys(*p)...)
+				properties = append(properties, slices.Collect(maps.Keys(*p))...)
 			}
 		}
 	}
@@ -243,7 +243,7 @@ func patternProperties(schema *jsonschema.Schema, propertyName string) []*jsonsc
 	}
 
 	result := make([]*jsonschema.Schema, 0, len(*patterns))
-	for _, pattern := range slices.Sorted(slices.Values(maps.Keys(*patterns))) {
+	for _, pattern := range slices.Sorted(maps.Keys(*patterns)) {
 		patternschema := (*patterns)[pattern]
 		regex := regexp.MustCompile(pattern)
 		if regex.MatchString(propertyName) {
