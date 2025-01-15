@@ -154,7 +154,7 @@ func scheYAMLObject(schema *jsonschema.Schema, cfg *Config) ([]*yaml.Node, error
 	for _, propertyName := range properties {
 		override, hasOverride := cfg.overrideFor(propertyName)
 		// if running in onlyRequired mode, emit required properties and overrides only
-		if cfg.OnlyRequired && !hasOverride && !required(schema, propertyName) {
+		if _, ok := cfg.ValueOverrides[propertyName]; !ok && cfg.OnlyRequired && !required(schema, propertyName) {
 			continue
 		} else if hasOverride && override == SkipValue {
 			// or if an override is supplied but it is the skip sentinel, continue
@@ -227,9 +227,9 @@ func resolve(schemas []*jsonschema.Schema) []*jsonschema.Schema {
 	for i, s := range schemas {
 		if s != nil && s.Ref != "" {
 			res[i] = s.ResolvedRef
-		} else {
-			res[i] = s
+			continue
 		}
+		res[i] = s
 	}
 
 	return res
