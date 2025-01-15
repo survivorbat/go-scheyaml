@@ -17,16 +17,44 @@ the raw `*yaml.Node` representation.
 
 ## 📋 Usage
 
-When override values are supplied or the json schema contains default values, the following rules apply when determining
-which value to use:
+A simple implementation assuming that a `json-schema.json` file is present is for example:
 
-1) if the schema is nullable (`"type": ["<type>", "null"]`) and an override is specified for this key, use the override
-2) if the schema is not nullable and the override is not `nil`, use the override value
-3) if the schema has a default (`"default": "abc"`) use the default value of the property
-4) if 1..N pattern properties match, use the first pattern property which has a default value (if any)
+```go
+package main
 
-This can be especially useful when using generated JSON/YAML structs for configuration in Go applications, e.g. 
-generated from [omissis/go-jsonschema](https://github.com/omissis/go-jsonschema):
+import (
+	_ "embed"
+	"fmt"
+
+	"github.com/kaptinlin/jsonschema"
+	"github.com/survivorbat/go-scheyaml"
+)
+
+//go:embed json-schema.json
+var file []byte
+
+func main() {
+	// load the jsonschema
+	compiler := jsonschema.NewCompiler()
+	schema, err := compiler.Compile(file)
+	if err != nil {
+		panic(err)
+	}
+
+	result, err := scheyaml.SchemaToYAML(schema, scheyaml.WithOverrideValues(map[string]any{
+		"hello": "world",
+	}))
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(result)
+}
+```
+
+But using this `ScheYAML` can be especially useful when also generating the config structs based on the JSON schema using
+e.g. [omissis/go-jsonschema](https://github.com/omissis/go-jsonschema):
+
 ```
 $ go-jsonschema --capitalization=API --extra-imports json-schema.json --struct-name-from-title -o config.go -p config
 ```
@@ -69,6 +97,16 @@ name: Hello World
 ```
 
 See the example tests in `./examples_test.go` for more details.
+
+## Override- / Default Value Rules
+
+When override values are supplied or the json schema contains default values, the following rules apply when determining
+which value to use:
+
+1) if the schema is nullable (`"type": ["<type>", "null"]`) and an override is specified for this key, use the override
+2) if the schema is not nullable and the override is not `nil`, use the override value
+3) if the schema has a default (`"default": "abc"`) use the default value of the property
+4) if 1..N pattern properties match, use the first pattern property which has a default value (if any)
 
 ## ✅ Support
 
