@@ -15,15 +15,6 @@ the raw `*yaml.Node` representation.
 
 `go get github.com/survivorbat/go-scheyaml`
 
-## Migration
-
-In V2 schema validation is by default applied which can be a breaking change for jsonschemas that are invalid.
-Previously, the schema and overrides would still be interpreted but this could lead to unpredictable behavior hence
-that it is now enabled by default. To skip schema validation, run it with the `SkipValidate` option:
-```
-result, err := SchemaToNode(schema, SkipValidate())
-```
-
 ## 📋 Usage
 
 When override values are supplied or the json schema contains default values, the following rules apply when determining
