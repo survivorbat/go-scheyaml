@@ -120,7 +120,7 @@ func TestSchemaToYAML_InvalidSchema(t *testing.T) {
 	result, err := SchemaToYAML(schema, WithOverrideValues(overrides))
 
 	// Assert
-	expected := &InvalidSchemaError{}
+	var expected *InvalidSchemaError
 	require.ErrorAs(t, err, &expected)
 	assert.Nil(t, result)
 }

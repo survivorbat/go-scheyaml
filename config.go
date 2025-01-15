@@ -30,12 +30,15 @@ func NewConfig() *Config {
 
 // Config serves as the configuration object to allow customisation in the library
 type Config struct {
+	// ValueOverride is a primitive value used outside of objects (mainly to support ItemsOverrides). For
+	// example when the schema is an array of which the items are primitives (e.g. "string"), the overrides
+	// are processed per item (hence the relation to ItemsOverrides) but are not of type map[string]any
+	// that is commonly used in ValueOverrides.
+	ValueOverride any
+
 	// HasOverride is configured in conjunction with ValueOverride to distinguish between the explicit
 	// and implicit nil
 	HasOverride bool
-
-	// ValueOverride is a primitive value used outside of objects (mainly to support ItemsOverrides)
-	ValueOverride any
 
 	// ValueOverrides allows a user to override the default values of a schema with the given value(s).
 	// Because a schema may nested, this takes the form of a map[string]any of which the structure must mimic
