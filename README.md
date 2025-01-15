@@ -1,11 +1,15 @@
 # 📅 Schema YAML
 
-Ever wanted to process a user provided YAML file constrained by a [JSON schema](https://json-schema.org)? This library will help with
-validating the user input to be compliant with the JSON schema as well as render a fully qualified version (with defaults) of only
-the required properties (useful when e.g. generating an initial YAML file for the user which still required attention) or all properties
-to retrieve the default values as defined by the JSON schema.
+SchemaYAML processes a YAML file that is constrained by [JSON schema](https://json-schema.org) by filling in default values and comments found in the schema. Additionally, the user input (the `overrides`) can be validated (or not with `SkipValidate`) to be compliant with the JSON schema or return an error if not the case.
 
-It uses [xeipuuv/gojsonschema](https://github.com/xeipuuv/gojsonschema)'s `jsonschema.Schema` struct as input.
+The processing is configurable to restrict returning only the required properties, which can be useful when writing
+the user configuration to disk. This provides a minimal configuration example for the user while when processing the
+file all remaining defaults can be automatically filled in (by `scheyaml`). See [Usage](#-usage) for an example.
+
+`ScheYAML` returns either the textual representation (configurable with `WithCommentMaxLength` and `WithIndent`) or
+the raw `*yaml.Node` representation.
+
+`ScheYAML` uses [xeipuuv/gojsonschema](https://github.com/xeipuuv/gojsonschema)'s `jsonschema.Schema` as input.
 
 ## ⬇️ Installation
 
