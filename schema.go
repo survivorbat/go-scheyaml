@@ -1,23 +1,34 @@
 package scheyaml
 
 import (
+	"errors"
 	"fmt"
+	"maps"
 	"regexp"
 	"slices"
+	"sort"
 	"strings"
 
 	"github.com/kaptinlin/jsonschema"
 	"github.com/mitchellh/go-wordwrap"
-	"golang.org/x/exp/maps"
 	"gopkg.in/yaml.v3"
 )
 
-const nullValue = "null"
+// ErrParsing is returned if during evaluation of the schema an error occurs
+var ErrParsing = errors.New("failed to parse/process jsonschema")
+
+// NullValue when setting an override to the 'null' value. This can be used as opposed to
+// SkipValue where the key is omitted entirely
+const NullValue = "null"
+
+// skipValue type alias used as a sentinel to omit a particular key from the result
+type skipValue bool
+
+// SkipValue can be set on any key to signal that it should be emitted from the result set
+var SkipValue skipValue = true
 
 // scheYAML turns the schema into an example yaml tree, using fields such as default, description and examples.
-//
-//nolint:cyclop // Slightly higher than allowed, but readable enough
-func scheYAML(rootSchema *jsonschema.Schema, cfg *Config) (*yaml.Node, error) {
+func scheYAML(rootSchema *jsonschema.Schema, cfg *Config) (*yaml.Node, error) { //nolint:cyclop // accepted complexity
 	result := new(yaml.Node)
 
 	// If we're dealing with a reference, we'll continue with a resolved version of it
@@ -43,6 +54,19 @@ func scheYAML(rootSchema *jsonschema.Schema, cfg *Config) (*yaml.Node, error) {
 
 	case "array":
 		result.Kind = yaml.SequenceNode
+		if len(cfg.ItemsOverrides) > 0 {
+			for i := range len(cfg.ItemsOverrides) {
+				arrayContent, err := scheYAML(rootSchema.Items, cfg.forIndex(i))
+				if err != nil {
+					return nil, err
+				}
+
+				result.Content = append(result.Content, arrayContent)
+			}
+
+			break
+		}
+
 		arrayContent, err := scheYAML(rootSchema.Items, cfg)
 		if err != nil {
 			return nil, err
@@ -50,13 +74,29 @@ func scheYAML(rootSchema *jsonschema.Schema, cfg *Config) (*yaml.Node, error) {
 
 		result.Content = []*yaml.Node{arrayContent}
 
-	case nullValue:
+	case NullValue:
 		result.Kind = yaml.ScalarNode
-		result.Value = nullValue
+		result.Value = NullValue
 
 	// Leftover options: string, number, integer, boolean
 	default:
 		result.Kind = yaml.ScalarNode
+
+		// derive a schema with default from the highest specificity (the rootschema) to lower (pattern properties in order)
+		schemas := append([]*jsonschema.Schema{rootSchema}, cfg.PatternProperties...)
+		if schema, ok := coalesce(schemas, withDefault); ok {
+			rootSchema = schema
+		}
+
+		if cfg.HasOverride && (all(schemas, nullable) || cfg.ValueOverride != nil) {
+			if cfg.ValueOverride == nil {
+				cfg.ValueOverride = NullValue
+			}
+
+			result.Value = fmt.Sprint(cfg.ValueOverride)
+
+			break
+		}
 
 		switch {
 		case rootSchema.Default != nil:
@@ -64,7 +104,7 @@ func scheYAML(rootSchema *jsonschema.Schema, cfg *Config) (*yaml.Node, error) {
 
 		default:
 			result.LineComment = cfg.TODOComment
-			result.Value = nullValue
+			result.Value = NullValue
 		}
 	}
 
@@ -72,127 +112,170 @@ func scheYAML(rootSchema *jsonschema.Schema, cfg *Config) (*yaml.Node, error) {
 }
 
 // scheYAMLObject encapsulates the logic to scheYAML a schema of type "object"
-//
-//nolint:cyclop // Acceptable complexity, splitting this up is overkill
-func scheYAMLObject(schema *jsonschema.Schema, cfg *Config) ([]*yaml.Node, error) {
-	// If no properties were defined (somehow), return an empty object
-	if schema.Properties == nil {
+func scheYAMLObject(schema *jsonschema.Schema, cfg *Config) ([]*yaml.Node, error) { //nolint:gocyclo,cyclop,gocognit // Acceptable complexity, splitting this up is overkill
+	// exit early if either schema or config is not defined
+	if schema == nil || cfg == nil {
+		return nil, fmt.Errorf("nil schema or config supplied: %w", ErrParsing)
+	}
+
+	// guard that all regexes are valid
+	if schema.PatternProperties != nil && len(*schema.PatternProperties) > 0 {
+		for pattern := range *schema.PatternProperties {
+			if _, err := regexp.Compile(pattern); err != nil {
+				return nil, fmt.Errorf("invalid pattern '%s': %w", pattern, err)
+			}
+		}
+	}
+
+	// properties is the join of the schema properties and the supplied overrides (which potentially match pattern properties)
+	var properties []string
+	if p := schema.Properties; p != nil && len(*p) > 0 {
+		properties = append(properties, slices.Collect(maps.Keys(*p))...)
+	}
+	if overrides := cfg.ValueOverrides; len(overrides) > 0 {
+		properties = append(properties, slices.Collect(maps.Keys(overrides))...)
+	}
+	if inherited := cfg.PatternProperties; len(inherited) > 0 {
+		for _, patternschema := range inherited {
+			if p := patternschema.Properties; p != nil && len(*p) > 0 {
+				properties = append(properties, slices.Collect(maps.Keys(*p))...)
+			}
+		}
+	}
+	properties = unique(properties)
+	sort.Strings(properties)
+
+	// exit early if nothing matches with an empty object definition
+	if len(properties) == 0 {
 		return []*yaml.Node{{Kind: yaml.MappingNode, Value: "{}"}}, nil
 	}
 
-	properties := alphabeticalProperties(schema)
-
-	var requiredProperties []string
-	for _, property := range properties {
-		if slices.Contains(schema.Required, property) {
-			requiredProperties = append(requiredProperties, property)
-		}
-	}
-
-	patternProperties, err := determinePatternProperties(schema, cfg)
-	if err != nil {
-		return nil, fmt.Errorf("failed to scheyaml pattern properties: %w", err)
-	}
-
-	//nolint:prealloc // We can't, false positive
-	var result []*yaml.Node
-
+	result := make([]*yaml.Node, 0, 2*len(properties)) //nolint:mnd // not a magic number, nodes come in pairs of key=node
 	for _, propertyName := range properties {
-		property := (*schema.Properties)[propertyName]
-		overrideValue, hasOverrideValue := cfg.overrideFor(propertyName)
-		if cfg.OnlyRequired && !hasOverrideValue && !slices.Contains(requiredProperties, propertyName) {
+		override, hasOverride := cfg.overrideFor(propertyName)
+		// if running in onlyRequired mode, emit required properties and overrides only
+		if !hasOverride && cfg.OnlyRequired && !required(schema, propertyName) {
+			continue
+		} else if hasOverride && override == SkipValue {
+			// or if an override is supplied but it is the skip sentinel, continue
 			continue
 		}
 
-		// Make sure that references are resolved on evaluation
-		if property.Ref != "" {
-			property = property.ResolvedRef
+		// collect property, the patterns the propertyName matches and combine them as a slice of schemas
+		// in order of specificity (property > patterns > inherited patterns)
+		property := (*schema.Properties)[propertyName]
+		patterns := patternPropertiesForProperty(schema, propertyName)
+		schemas := append([]*jsonschema.Schema{property}, patterns...)
+
+		// resolve potential references in schemas
+		schemas = resolve(schemas)
+
+		if inherited := cfg.PatternProperties; len(inherited) > 0 {
+			for _, patternschema := range inherited {
+				if patternProperty, hasProperty := (*patternschema.Properties)[propertyName]; hasProperty {
+					schemas = append(schemas, patternProperty)
+				}
+			}
+		}
+		rootschema, _ := coalesce(schemas, notNil)
+
+		// keyNode of the key: value pair in YAML
+		keyNode := &yaml.Node{
+			Kind:  yaml.ScalarNode,
+			Value: propertyName,
 		}
 
-		// The property name node
-		result = append(result, &yaml.Node{
-			Kind:        yaml.ScalarNode,
-			Value:       propertyName,
-			HeadComment: formatHeadComment(property, cfg.LineLength),
-		})
-
-		if hasOverrideValue {
-			// Otherwise it'd make it <nil>
-			if overrideValue == nil {
-				overrideValue = nullValue
+		if rootschema == nil && hasOverride { // e.g. an override that is not contained in the schema
+			var valueNode yaml.Node
+			if b, marshalErr := yaml.Marshal(override); marshalErr != nil {
+				continue
+			} else if unmarshalErr := yaml.Unmarshal(b, &valueNode); unmarshalErr != nil {
+				continue
+			} else if len(valueNode.Content) == 0 {
+				continue
 			}
 
-			// The property value node
-			result = append(result, &yaml.Node{
-				Kind:  yaml.ScalarNode,
-				Value: fmt.Sprint(overrideValue),
-			})
+			result = append(result, keyNode, valueNode.Content[0])
 
 			continue
+		} else if rootschema == nil {
+			continue // malformed node
 		}
 
-		// The property value node
-		valueNode, err := scheYAML(property, cfg.forProperty(propertyName))
+		// add a HeadComment to the schema if a node is found which has a description or examples
+		schemaWithDescription, hasDescription := coalesce(schemas, withDescription)
+		schemaWithExamples, hasExamples := coalesce(schemas, withExamples)
+		switch {
+		case hasDescription && hasExamples:
+			keyNode.HeadComment = formatHeadComment(*schemaWithDescription.Description, schemaWithExamples.Examples, cfg.LineLength)
+		case hasDescription:
+			keyNode.HeadComment = formatHeadComment(*schemaWithDescription.Description, []any{}, cfg.LineLength)
+		case hasExamples:
+			keyNode.HeadComment = formatHeadComment("", schemaWithExamples.Examples, cfg.LineLength)
+		}
+
+		// else recursively determine the nodeValue using scheYAML
+		valueNode, err := scheYAML(rootschema, cfg.forProperty(propertyName, patterns))
 		if err != nil {
 			return nil, fmt.Errorf("failed to scheyaml %q: %w", propertyName, err)
 		}
 
-		if valueNode.Content == nil && valueNode.Kind == yaml.MappingNode {
+		// in case only
+		if len(valueNode.Content) == 0 && valueNode.Kind == yaml.MappingNode {
 			valueNode.Value = "{}"
 		}
 
-		if patternNodes, ok := patternProperties[propertyName]; ok {
-			valueNode.Content = append(valueNode.Content, patternNodes...)
-		}
-
-		result = append(result, valueNode)
+		result = append(result, keyNode, valueNode)
 	}
 
 	return result, nil
 }
 
-// determinePatternProperties's purpose is to generate additional nodes for properties that match
-// defined patternProperties in the schema
-func determinePatternProperties(schema *jsonschema.Schema, cfg *Config) (map[string][]*yaml.Node, error) {
-	result := make(map[string][]*yaml.Node)
-
-	if schema.Properties == nil || schema.PatternProperties == nil {
-		return result, nil
+// resolve returns a new slice in which schemas that are references are replaced with the resolved reference
+func resolve(schemas []*jsonschema.Schema) []*jsonschema.Schema {
+	if len(schemas) == 0 {
+		return schemas
 	}
 
-	properties := maps.Keys(*schema.Properties)
-
-	for regex, patternProperty := range *schema.PatternProperties {
-		parsedRegex, err := regexp.Compile(regex)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse %q as a regex: %w", regex, err)
+	res := make([]*jsonschema.Schema, len(schemas))
+	for i, s := range schemas {
+		if s != nil && s.Ref != "" {
+			res[i] = s.ResolvedRef
+			continue
 		}
+		res[i] = s
+	}
 
-		for _, property := range properties {
-			if !parsedRegex.MatchString(property) {
-				continue
-			}
+	return res
+}
 
-			result[property], err = scheYAMLObject(patternProperty, cfg)
-			if err != nil {
-				return nil, fmt.Errorf("failed to scheyaml %q: %w", regex, err)
-			}
+// patternPropertiesForProperty returns matching pattern properties sorted in alphabetical order for some property name
+func patternPropertiesForProperty(schema *jsonschema.Schema, propertyName string) []*jsonschema.Schema {
+	patterns := schema.PatternProperties
+	if patterns == nil || len(*patterns) == 0 {
+		return []*jsonschema.Schema{}
+	}
+
+	result := make([]*jsonschema.Schema, 0, len(*patterns))
+	for _, pattern := range slices.Sorted(maps.Keys(*patterns)) {
+		patternschema := (*patterns)[pattern]
+		regex := regexp.MustCompile(pattern)
+		if regex.MatchString(propertyName) {
+			result = append(result, patternschema)
 		}
 	}
 
-	return result, nil
+	return result
 }
 
 // formatHeadComment will generate the comment above the property with the description
 // and example values. The description will be word-wrapped in case it exceeds the given non-zero lineLength.
-func formatHeadComment(schema *jsonschema.Schema, lineLength uint) string {
+func formatHeadComment(description string, examples []any, lineLength uint) string {
 	var builder strings.Builder
 
-	if schema.Description != nil {
-		description := *schema.Description
-
+	if description != "" {
 		if lineLength > 0 {
-			description = wordwrap.WrapString(*schema.Description, lineLength)
+			description = wordwrap.WrapString(description, lineLength)
 		}
 
 		// Empty new lines aren't respected by default
@@ -201,32 +284,24 @@ func formatHeadComment(schema *jsonschema.Schema, lineLength uint) string {
 		builder.WriteString(description)
 	}
 
-	if schema.Description != nil && len(schema.Examples) > 0 {
+	if description != "" && len(examples) > 0 {
 		// Empty newlines aren't respected, so we need to add our own #
 		builder.WriteString("\n#\n")
 	}
 
-	if len(schema.Examples) > 0 {
-		// Have too prepend a # here, newlines aren't commented by default
+	if len(examples) > 0 {
+		// Have to prepend a # here, newlines aren't commented by default
 		builder.WriteString("Examples:\n")
-		for _, example := range schema.Examples {
+		for _, example := range examples {
 			_, _ = builder.WriteString("- ")
 			if example != nil {
 				_, _ = builder.WriteString(fmt.Sprint(example))
 			} else {
-				_, _ = builder.WriteString(nullValue)
+				_, _ = builder.WriteString(NullValue)
 			}
 			_, _ = builder.WriteRune('\n')
 		}
 	}
 
 	return builder.String()
-}
-
-// alphabeticalProperties is used to make the order of the object property deterministic. Might make this
-// configurable later.
-func alphabeticalProperties(schema *jsonschema.Schema) []string {
-	result := maps.Keys(*schema.Properties)
-	slices.Sort(result)
-	return result
 }

@@ -3,7 +3,9 @@ package scheyaml
 import (
 	"testing"
 
+	"github.com/kaptinlin/jsonschema"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestConfig_ForProperty_ReturnsExpectedConfig(t *testing.T) {
@@ -24,10 +26,14 @@ func TestConfig_ForProperty_ReturnsExpectedConfig(t *testing.T) {
 			propertyName: "foo",
 
 			expected: &Config{
-				TODOComment:    "abc",
-				LineLength:     20,
-				OnlyRequired:   true,
-				ValueOverrides: map[string]any{},
+				HasOverride:       false,
+				ValueOverride:     nil,
+				ValueOverrides:    map[string]any{},
+				ItemsOverrides:    []any{},
+				PatternProperties: []*jsonschema.Schema{},
+				TODOComment:       "abc",
+				OnlyRequired:      true,
+				LineLength:        20,
 			},
 		},
 		"non-existing property returns empty ValueOverrides": {
@@ -35,7 +41,14 @@ func TestConfig_ForProperty_ReturnsExpectedConfig(t *testing.T) {
 			propertyName: "does-not-exist",
 
 			expected: &Config{
-				ValueOverrides: map[string]any{},
+				HasOverride:       false,
+				ValueOverride:     nil,
+				ValueOverrides:    map[string]any{},
+				ItemsOverrides:    []any{},
+				PatternProperties: []*jsonschema.Schema{},
+				TODOComment:       "",
+				OnlyRequired:      false,
+				LineLength:        0,
 			},
 		},
 		"property that is not a map[string]any returns empty ValueOverrides": {
@@ -45,7 +58,14 @@ func TestConfig_ForProperty_ReturnsExpectedConfig(t *testing.T) {
 			propertyName: "wrong-type",
 
 			expected: &Config{
-				ValueOverrides: map[string]any{},
+				HasOverride:       true,
+				ValueOverride:     "abc",
+				ValueOverrides:    map[string]any{},
+				ItemsOverrides:    []any{},
+				PatternProperties: []*jsonschema.Schema{},
+				TODOComment:       "",
+				OnlyRequired:      false,
+				LineLength:        0,
 			},
 		},
 		"subproperty is returned as expected": {
@@ -55,7 +75,14 @@ func TestConfig_ForProperty_ReturnsExpectedConfig(t *testing.T) {
 			propertyName: "foo",
 
 			expected: &Config{
-				ValueOverrides: map[string]any{"bar": "baz"},
+				HasOverride:       false,
+				ValueOverride:     nil,
+				ValueOverrides:    map[string]any{"bar": "baz"},
+				ItemsOverrides:    []any{},
+				PatternProperties: []*jsonschema.Schema{},
+				TODOComment:       "",
+				OnlyRequired:      false,
+				LineLength:        0,
 			},
 		},
 		"subproperty is returned with OnlyRequired=true if set on parent": {
@@ -65,8 +92,34 @@ func TestConfig_ForProperty_ReturnsExpectedConfig(t *testing.T) {
 			propertyName: "foo",
 
 			expected: &Config{
-				OnlyRequired:   true,
-				ValueOverrides: map[string]any{},
+				HasOverride:       false,
+				ValueOverride:     nil,
+				ValueOverrides:    map[string]any{},
+				ItemsOverrides:    []any{},
+				PatternProperties: []*jsonschema.Schema{},
+				TODOComment:       "",
+				OnlyRequired:      true,
+				LineLength:        0,
+			},
+		},
+		"items overrides returned if input is a slice": {
+			input: &Config{
+				OnlyRequired: true,
+				ValueOverrides: map[string]any{
+					"beverages": []string{"coffee", "tea"},
+				},
+			},
+			propertyName: "beverages",
+
+			expected: &Config{
+				HasOverride:       false,
+				ValueOverride:     nil,
+				ValueOverrides:    map[string]any{},
+				ItemsOverrides:    []any{"coffee", "tea"},
+				PatternProperties: []*jsonschema.Schema{},
+				TODOComment:       "",
+				OnlyRequired:      true,
+				LineLength:        0,
 			},
 		},
 	}
@@ -75,7 +128,7 @@ func TestConfig_ForProperty_ReturnsExpectedConfig(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			// Act
-			result := testData.input.forProperty(testData.propertyName)
+			result := testData.input.forProperty(testData.propertyName, nil)
 
 			// Assert
 			assert.Equal(t, testData.expected, result)
@@ -87,22 +140,6 @@ func TestConfig_OverrideFor_ReturnsFalseOnNotExists(t *testing.T) {
 	t.Parallel()
 	// Arrange
 	cfg := NewConfig()
-
-	// Act
-	value, ok := cfg.overrideFor("abc")
-
-	// Assert
-	assert.False(t, ok)
-	assert.Nil(t, value)
-}
-
-func TestConfig_OverrideFor_ReturnsFalseOnNestedValue(t *testing.T) {
-	t.Parallel()
-	// Arrange
-	cfg := NewConfig()
-	cfg.ValueOverrides = map[string]any{
-		"abc": map[string]any{},
-	}
 
 	// Act
 	value, ok := cfg.overrideFor("abc")
@@ -126,4 +163,58 @@ func TestConfig_OverrideFor_ReturnsTrueOnOverrideFound(t *testing.T) {
 	// Assert
 	assert.True(t, ok)
 	assert.Equal(t, "def", value)
+}
+
+func TestConfig_forProperty_MapStringAnyTypeAlias(t *testing.T) {
+	t.Parallel()
+	// Arrange
+	type MapAlias map[string]any
+	cfg := NewConfig()
+	cfg.ValueOverrides = map[string]any{
+		"abc": MapAlias{
+			"foo": "bar",
+		},
+	}
+
+	// Act
+	result := cfg.forProperty("abc", nil)
+
+	// Assert
+	require.NotNil(t, result)
+	assert.Equal(t, map[string]any{
+		"foo": "bar",
+	}, result.ValueOverrides)
+}
+
+func TestConfig_forProperty_NilMapStringAnyTypeAlias(t *testing.T) {
+	t.Parallel()
+	// Arrange
+	type MapAlias map[string]any
+	cfg := NewConfig()
+	cfg.ValueOverrides = map[string]any{
+		"abc": MapAlias(nil),
+	}
+
+	// Act
+	result := cfg.forProperty("abc", nil)
+
+	// Assert
+	require.NotNil(t, result)
+	assert.Equal(t, map[string]any{}, result.ValueOverrides)
+}
+
+func TestConfig_forProperty_NilOverride(t *testing.T) {
+	t.Parallel()
+	// Arrange
+	cfg := NewConfig()
+	cfg.ValueOverrides = map[string]any{
+		"abc": nil,
+	}
+
+	// Act
+	result := cfg.forProperty("abc", nil)
+
+	// Assert
+	require.NotNil(t, result)
+	assert.Equal(t, map[string]any{}, result.ValueOverrides)
 }

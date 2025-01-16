@@ -69,6 +69,13 @@ func ExampleSchemaToYAML_withOverrideValues() {
         "default": "Robin",
         "description": "The name of the customer"
       },
+      "previous_orders": {
+        "type": "array",
+		"items": {
+			"type": "string"
+		},
+        "description": "names of beverages the customer has consumed"
+      },
       "beverages": {
         "type": "array",
         "description": "A list of beverages the customer has consumed",
@@ -95,9 +102,11 @@ func ExampleSchemaToYAML_withOverrideValues() {
   }`
 
 	overrides := map[string]any{
-		"name": "John",
-		"beverages": map[string]any{
-			"name": "Coffee",
+		"name":            "John",
+		"previous_orders": []string{"Water", "Tea"},
+		"beverages": []any{
+			map[string]any{"name": "Coffee"},
+			map[string]any{"name": "Beer"},
 		},
 	}
 
@@ -106,23 +115,40 @@ func ExampleSchemaToYAML_withOverrideValues() {
 	compiler := jsonschema.NewCompiler()
 	schema, _ := compiler.Compile([]byte(input))
 
-	result, _ := SchemaToYAML(schema, WithOverrideValues(overrides), WithTODOComment(todoComment))
+	result, err := SchemaToYAML(schema, WithIndent(2), WithOverrideValues(overrides), WithTODOComment(todoComment))
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	fmt.Println(string(result))
 
 	// Output:
 	// # A list of beverages the customer has consumed
 	// beverages:
-	//     - description: null # Do something with this
-	//       # The name of the beverage
-	//       #
-	//       # Examples:
-	//       # - Coffee
-	//       # - Tea
-	//       # - Cappucino
-	//       name: Coffee
-	//       # The price of the product
-	//       price: 4.5
+	//   - description: null # Do something with this
+	//     # The name of the beverage
+	//     #
+	//     # Examples:
+	//     # - Coffee
+	//     # - Tea
+	//     # - Cappucino
+	//     name: Coffee
+	//     # The price of the product
+	//     price: 4.5
+	//   - description: null # Do something with this
+	//     # The name of the beverage
+	//     #
+	//     # Examples:
+	//     # - Coffee
+	//     # - Tea
+	//     # - Cappucino
+	//     name: Beer
+	//     # The price of the product
+	//     price: 4.5
 	// # The name of the customer
 	// name: John
+	// # names of beverages the customer has consumed
+	// previous_orders:
+	//   - Water
+	//   - Tea
 }
