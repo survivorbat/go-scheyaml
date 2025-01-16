@@ -162,16 +162,6 @@ func (c *Config) overrideFor(propertyName string) (any, bool) {
 		return nil, false
 	}
 
-	// Is it ~map[string]any
-	if _, isMapStringAny := asMapStringAny(propertyOverride); isMapStringAny {
-		return nil, false
-	}
-
-	// Is it ~[]any
-	if _, isSliceAny := asSliceAny(propertyOverride); isSliceAny {
-		return nil, false
-	}
-
 	if _, shouldSkip := propertyOverride.(skipValue); shouldSkip {
 		return SkipValue, true
 	}

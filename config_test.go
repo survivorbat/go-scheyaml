@@ -129,22 +129,6 @@ func TestConfig_OverrideFor_ReturnsFalseOnNotExists(t *testing.T) {
 	assert.Nil(t, value)
 }
 
-func TestConfig_OverrideFor_ReturnsFalseOnNestedValue(t *testing.T) {
-	t.Parallel()
-	// Arrange
-	cfg := NewConfig()
-	cfg.ValueOverrides = map[string]any{
-		"abc": map[string]any{},
-	}
-
-	// Act
-	value, ok := cfg.overrideFor("abc")
-
-	// Assert
-	assert.False(t, ok)
-	assert.Nil(t, value)
-}
-
 func TestConfig_OverrideFor_ReturnsTrueOnOverrideFound(t *testing.T) {
 	t.Parallel()
 	// Arrange

@@ -154,7 +154,7 @@ func scheYAMLObject(schema *jsonschema.Schema, cfg *Config) ([]*yaml.Node, error
 	for _, propertyName := range properties {
 		override, hasOverride := cfg.overrideFor(propertyName)
 		// if running in onlyRequired mode, emit required properties and overrides only
-		if _, ok := cfg.ValueOverrides[propertyName]; !ok && cfg.OnlyRequired && !required(schema, propertyName) {
+		if !hasOverride && cfg.OnlyRequired && !required(schema, propertyName) {
 			continue
 		} else if hasOverride && override == SkipValue {
 			// or if an override is supplied but it is the skip sentinel, continue
@@ -178,14 +178,28 @@ func scheYAMLObject(schema *jsonschema.Schema, cfg *Config) ([]*yaml.Node, error
 			}
 		}
 		rootschema, _ := coalesce(schemas, notNil)
-		if rootschema == nil {
-			continue // as this property is not contained in properties OR pattern properties and thus invalid
-		}
 
 		// keyNode of the key: value pair in YAML
 		keyNode := &yaml.Node{
 			Kind:  yaml.ScalarNode,
 			Value: propertyName,
+		}
+
+		if rootschema == nil && hasOverride { // e.g. an override that is not contained in the schema
+			var valueNode yaml.Node
+			if b, marshalErr := yaml.Marshal(override); marshalErr != nil {
+				continue
+			} else if unmarshalErr := yaml.Unmarshal(b, &valueNode); unmarshalErr != nil {
+				continue
+			} else if len(valueNode.Content) == 0 {
+				continue
+			}
+
+			result = append(result, keyNode, valueNode.Content[0])
+
+			continue
+		} else if rootschema == nil {
+			continue // malformed node
 		}
 
 		// add a HeadComment to the schema if a node is found which has a description or examples
