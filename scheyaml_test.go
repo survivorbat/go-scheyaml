@@ -97,8 +97,9 @@ func TestSchemaToNode_InvalidSchema(t *testing.T) {
 	result, err := SchemaToNode(schema, WithOverrideValues(overrides))
 
 	// Assert
-	expected := &InvalidSchemaError{}
-	require.ErrorAs(t, err, &expected)
+	var actual *InvalidSchemaError
+	require.ErrorAs(t, err, &actual)
+	assert.NotEmpty(t, actual.Errors)
 	assert.Nil(t, result)
 }
 
@@ -120,7 +121,8 @@ func TestSchemaToYAML_InvalidSchema(t *testing.T) {
 	result, err := SchemaToYAML(schema, WithOverrideValues(overrides))
 
 	// Assert
-	var expected *InvalidSchemaError
-	require.ErrorAs(t, err, &expected)
+	var actual *InvalidSchemaError
+	require.ErrorAs(t, err, &actual)
+	assert.NotEmpty(t, actual.Errors)
 	assert.Nil(t, result)
 }

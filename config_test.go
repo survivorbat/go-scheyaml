@@ -102,6 +102,26 @@ func TestConfig_ForProperty_ReturnsExpectedConfig(t *testing.T) {
 				LineLength:        0,
 			},
 		},
+		"items overrides returned if input is a slice": {
+			input: &Config{
+				OnlyRequired: true,
+				ValueOverrides: map[string]any{
+					"beverages": []string{"coffee", "tea"},
+				},
+			},
+			propertyName: "beverages",
+
+			expected: &Config{
+				HasOverride:       false,
+				ValueOverride:     nil,
+				ValueOverrides:    map[string]any{},
+				ItemsOverrides:    []any{"coffee", "tea"},
+				PatternProperties: []*jsonschema.Schema{},
+				TODOComment:       "",
+				OnlyRequired:      true,
+				LineLength:        0,
+			},
+		},
 	}
 
 	for name, testData := range tests {

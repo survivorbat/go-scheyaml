@@ -63,11 +63,12 @@ type Config struct {
 	// completely by setting it to 0.
 	LineLength uint
 
-	// Indent used when marshalling to YAML
+	// Indent used when marshalling to YAML. This property is only available at the root level and not copied in
+	// forProperty
 	Indent int
 
 	// SkipValidate of the provided jsonschema and override values. Might result in undefined behavior, use
-	// at own risk.
+	// at own risk. This property is only available at the root level and not copied in forProperty
 	SkipValidate bool
 }
 
@@ -92,16 +93,19 @@ func (c *Config) forProperty(propertyName string, patternProps []*jsonschema.Sch
 	patterns := make([]*jsonschema.Schema, 0, len(patternProps)+len(c.PatternProperties))
 	patterns = append(patterns, patternProps...)
 	for _, p := range c.PatternProperties {
-		if len(p.Type) > 0 && p.Type[0] == "object" {
-			// add property
-			if p.Properties != nil && len(*p.Properties) > 0 {
-				if property, hasProperty := (*p.Properties)[propertyName]; hasProperty {
-					patterns = append(patterns, property)
-				}
-			}
-
-			patterns = append(patterns, patternProperties(p, propertyName)...)
+		if len(p.Type) == 0 || p.Type[0] != "object" {
+			continue
 		}
+
+		// add properties from the pattern properties that match the current property
+		// this is the case if the pattern property is an object which contains the current propertyName
+		if p.Properties != nil && len(*p.Properties) > 0 {
+			if property, hasProperty := (*p.Properties)[propertyName]; hasProperty {
+				patterns = append(patterns, property)
+			}
+		}
+
+		patterns = append(patterns, patternPropertiesForProperty(p, propertyName)...)
 	}
 
 	if valueOverrides == nil {
@@ -125,7 +129,8 @@ func (c *Config) forProperty(propertyName string, patternProps []*jsonschema.Sch
 }
 
 // forIndex will construct a config object for the given index, allows for recursive
-// digging into property overrides for
+// digging into property overrides for items in slices. It checks the ItemsOverrides and makes a specific
+// override available on the confix for the particular index
 func (c *Config) forIndex(index int) *Config {
 	var valueOverride any
 	var hasValueOverride bool
@@ -153,8 +158,7 @@ func (c *Config) forIndex(index int) *Config {
 }
 
 // overrideFor examines ValueOverrides to see if there are any override values defined for the given
-// propertyName. It will not return nested map[string]any values (or aliasses thereof) nor []any or
-// aliases thereof. These are resolved in overrideForIndex
+// propertyName.
 func (c *Config) overrideFor(propertyName string) (any, bool) {
 	// Does it exist
 	propertyOverride, ok := c.ValueOverrides[propertyName]
