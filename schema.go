@@ -166,9 +166,14 @@ func scheYAMLObject(schema *jsonschema.Schema, cfg *Config) ([]*yaml.Node, error
 
 		// collect property, the patterns the propertyName matches and combine them as a slice of schemas
 		// in order of specificity (property > patterns > inherited patterns)
-		property := (*schema.Properties)[propertyName]
+		var schemas []*jsonschema.Schema
+		if schema.Properties != nil {
+			if property, ok := (*schema.Properties)[propertyName]; ok {
+				schemas = append(schemas, property)
+			}
+		}
 		patterns := patternPropertiesForProperty(schema, propertyName)
-		schemas := append([]*jsonschema.Schema{property}, patterns...)
+		schemas = append(schemas, patterns...)
 
 		// resolve potential references in schemas
 		schemas = resolve(schemas)

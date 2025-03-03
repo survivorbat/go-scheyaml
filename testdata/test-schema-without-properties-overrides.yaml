@@ -1,0 +1,5 @@
+# yaml-language-server: $schema=./test-schema-only-allof.json
+type: object
+properties:
+  name:
+    type: string
