@@ -152,6 +152,45 @@ func TestScheYAML_ReturnsEmptyObjectOnNoProperties(t *testing.T) {
 	assert.Equal(t, expectedData, string(actualData))
 }
 
+func TestScheYAML_AddsSchemaHeaderOnRequested(t *testing.T) {
+	t.Parallel()
+	// Arrange
+	inputData := `{
+  "type": "object",
+  "properties": {
+    "person": {
+      "type": "object",
+      "description": "Person"
+    }
+  }
+}`
+
+	compiler := jsonschema.NewCompiler()
+	schema, err := compiler.Compile([]byte(inputData))
+	require.NoError(t, err)
+
+	cfg := NewConfig()
+	cfg.OutputHeader = "This is my favorite comment"
+
+	// Act
+	result, err := scheYAML(schema, cfg)
+
+	// Assert
+	require.NoError(t, err)
+
+	expectedData := "# This is my favorite comment\n# Person\nperson: {}\n"
+
+	// Raw YAML from the node
+	actualData, err := yaml.Marshal(&result)
+	require.NoError(t, err)
+
+	// First test the data itself, and quit if it isn't as expected.
+	require.YAMLEq(t, expectedData, string(actualData))
+
+	// If the properties are as expected, test the comments
+	assert.Equal(t, expectedData, string(actualData))
+}
+
 // Catch-all for 'simple' overrides
 func TestScheYAML_OverridesValuesFromConfig(t *testing.T) {
 	t.Parallel()
@@ -301,7 +340,7 @@ func TestScheYAML_NoType(t *testing.T) {
 	schema := &jsonschema.Schema{}
 
 	// Act
-	node, err := scheYAML(schema, nil)
+	node, err := scheYAML(schema, NewConfig())
 
 	// Assert
 	require.NoError(t, err)

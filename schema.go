@@ -31,6 +31,9 @@ var SkipValue skipValue = true
 func scheYAML(rootSchema *jsonschema.Schema, cfg *Config) (*yaml.Node, error) { //nolint:cyclop // accepted complexity
 	result := new(yaml.Node)
 
+	// OutputHeader is not a recursive property, so it will only have affect on the root node
+	result.HeadComment = cfg.OutputHeader
+
 	// If we're dealing with a reference, we'll continue with a resolved version of it
 	if rootSchema.Ref != "" {
 		return scheYAML(rootSchema.ResolvedRef, cfg)
