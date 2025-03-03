@@ -334,7 +334,7 @@ func TestScheYAML_MappingNodeOnlyRequired(t *testing.T) {
 	assert.Equal(t, "{}", result.Content[1].Value)
 }
 
-func TestScheYAML_OverrideOnlyAllOf(t *testing.T) {
+func TestScheYAML_OverridesOnSchemaWithoutPropertiesDoesNotPanic(t *testing.T) {
 	t.Parallel()
 	// Arrange
 	inputData, _ := os.ReadFile(path.Join("testdata", "test-schema-only-allof.json"))
