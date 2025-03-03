@@ -30,6 +30,10 @@ func NewConfig() *Config {
 
 // Config serves as the configuration object to allow customisation in the library
 type Config struct {
+	// OutputHeader is added to the top of the generated result as a comment, This property is only available at the root level and not copied in
+	// forProperty
+	OutputHeader string
+
 	// ValueOverride is a primitive value used outside of objects (mainly to support ItemsOverrides). For
 	// example when the schema is an array of which the items are primitives (e.g. "string"), the overrides
 	// are processed per item (hence the relation to ItemsOverrides) but are not of type map[string]any
@@ -259,5 +263,13 @@ func WithCommentMaxLength(lineLength uint) Option {
 func SkipValidate() Option {
 	return func(c *Config) {
 		c.SkipValidate = true
+	}
+}
+
+// WithSchemaHeader will add the `# yaml-language-server: $schema=[...]` header to the output, allowing
+// IDEs to provide autocompletion.
+func WithSchemaHeader(schemaPath string) Option {
+	return func(c *Config) {
+		c.OutputHeader = "yaml-language-server: $schema=" + schemaPath
 	}
 }
