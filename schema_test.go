@@ -337,7 +337,7 @@ func TestScheYAML_MappingNodeOnlyRequired(t *testing.T) {
 func TestScheYAML_OverridesOnSchemaWithoutPropertiesDoesNotPanic(t *testing.T) {
 	t.Parallel()
 	// Arrange
-	inputData, _ := os.ReadFile(path.Join("testdata", "test-schema-only-allof.json"))
+	inputData, _ := os.ReadFile(path.Join("testdata", "test-schema-without-properties.json"))
 
 	compiler := jsonschema.NewCompiler()
 	schema, err := compiler.Compile(inputData)
@@ -345,7 +345,7 @@ func TestScheYAML_OverridesOnSchemaWithoutPropertiesDoesNotPanic(t *testing.T) {
 
 	cfg := NewConfig()
 	var overrides map[string]any
-	overridesData, err := os.ReadFile(path.Join("testdata", "test-schema-only-allof-overrides.yaml"))
+	overridesData, err := os.ReadFile(path.Join("testdata", "test-schema-without-properties-overrides.yaml"))
 	require.NoError(t, err)
 	require.NoError(t, yaml.Unmarshal(overridesData, &overrides))
 	cfg.ValueOverrides = overrides
@@ -356,7 +356,7 @@ func TestScheYAML_OverridesOnSchemaWithoutPropertiesDoesNotPanic(t *testing.T) {
 	// Assert
 	require.NoError(t, err)
 
-	expectedData, _ := os.ReadFile(path.Join("testdata", "test-schema-only-allof-overrides.yaml"))
+	expectedData, _ := os.ReadFile(path.Join("testdata", "test-schema-without-properties-overrides.yaml"))
 
 	// Raw YAML from the node
 	actualData, err := yaml.Marshal(&result)
