@@ -1,43 +1,58 @@
-issues:
-  exclude-rules:
-    - path: (.+)_test.go
-      linters:
-        - goconst # Test data doesn't need to be in constants
-        - err113 # We're not defining static errors in tests
-
-linters-settings:
-  nlreturn:
-    # Allow 2 lines max to have a return statement without a new line before it
-    block-size: 3
-
-  gocritic:
-    disabled-checks:
-      - "paramTypeCombine"
-      - "unnamedResult"
-    enabled-tags:
-      - "performance"
-      - "style"
-      - "diagnostic"
-
-  govet:
-    enable-all: true
-    disable:
-      - fieldalignment
-
+version: "2"
 linters:
-  enable-all: true
-  disable: 
-    # Disabled because they're too strict
-    - gochecknoglobals # We sometimes use global variables for ease of use
-    - depguard # Unnecessary check
-    - exhaustruct # We don't always have to fill all fields
-    - lll # We don't enforce line lengths
-    - wsl # Too strict about statement placement
-    - wrapcheck # We don't enforce wrapping
-    - varnamelen # We don't enforce var name length
-    - testpackage # We don't use test packages
-    - funlen # We don't enforce the length of a function
-    - exportloopref # Deprecated and no longer required in 1.22
-    - godot # Too strict
-    - godox # We allow TODOs
-
+  default: all
+  disable:
+    - depguard
+    - exhaustruct
+    - funlen
+    - gochecknoglobals
+    - godot
+    - godox
+    - lll
+    - testpackage
+    - varnamelen
+    - wrapcheck
+    - wsl
+  settings:
+    gocritic:
+      disabled-checks:
+        - paramTypeCombine
+        - unnamedResult
+      enabled-tags:
+        - performance
+        - style
+        - diagnostic
+    govet:
+      disable:
+        - fieldalignment
+      enable-all: true
+    nlreturn:
+      block-size: 3
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - err113
+          - goconst
+        path: (.+)_test.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

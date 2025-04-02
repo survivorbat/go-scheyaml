@@ -18,7 +18,7 @@ func TestCoalesce_EmptySlice(t *testing.T) {
 
 	// Assert
 	assert.False(t, hasElem)
-	assert.Equal(t, "", elem)
+	assert.Empty(t, elem)
 }
 
 func TestAll_EmptySlice(t *testing.T) {
