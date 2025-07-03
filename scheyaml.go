@@ -53,12 +53,15 @@ func SchemaToYAML(schema *jsonschema.Schema, opts ...Option) ([]byte, error) {
 	}
 
 	writer := new(bytes.Buffer)
+
 	encoder := yaml.NewEncoder(writer)
 	if config.Indent != 0 {
 		encoder.SetIndent(config.Indent)
 	}
-	if encodeErr := encoder.Encode(&rootNode); encodeErr != nil {
-		return nil, fmt.Errorf("failed to marshal yaml nodes: %w", err)
+
+	encodeErr := encoder.Encode(&rootNode)
+	if encodeErr != nil {
+		return nil, fmt.Errorf("failed to marshal yaml nodes: %w", encodeErr)
 	}
 
 	return writer.Bytes(), nil

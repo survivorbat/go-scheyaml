@@ -109,6 +109,7 @@ func TestSchemaToNode_InvalidSchema(t *testing.T) {
 	require.NoError(t, err)
 
 	var overrides map[string]any
+
 	overridesData, err := os.ReadFile(path.Join("testdata", "test-schema-nested-pattern-properties-overrides.yaml"))
 	require.NoError(t, err)
 	require.NoError(t, yaml.Unmarshal(overridesData, &overrides))
@@ -133,6 +134,7 @@ func TestSchemaToYAML_InvalidSchema(t *testing.T) {
 	require.NoError(t, err)
 
 	var overrides map[string]any
+
 	overridesData, err := os.ReadFile(path.Join("testdata", "test-schema-nested-pattern-properties-overrides.yaml"))
 	require.NoError(t, err)
 	require.NoError(t, yaml.Unmarshal(overridesData, &overrides))

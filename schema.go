@@ -48,6 +48,7 @@ func scheYAML(rootSchema *jsonschema.Schema, cfg *Config) (*yaml.Node, error) { 
 	switch rootSchema.Type[0] {
 	case "object":
 		result.Kind = yaml.MappingNode
+
 		objectContent, err := scheYAMLObject(rootSchema, cfg)
 		if err != nil {
 			return nil, err
@@ -57,6 +58,7 @@ func scheYAML(rootSchema *jsonschema.Schema, cfg *Config) (*yaml.Node, error) { 
 
 	case "array":
 		result.Kind = yaml.SequenceNode
+
 		if len(cfg.ItemsOverrides) > 0 {
 			for i := range len(cfg.ItemsOverrides) {
 				arrayContent, err := scheYAML(rootSchema.Items, cfg.forIndex(i))
@@ -135,9 +137,11 @@ func scheYAMLObject(schema *jsonschema.Schema, cfg *Config) ([]*yaml.Node, error
 	if p := schema.Properties; p != nil && len(*p) > 0 {
 		properties = append(properties, slices.Collect(maps.Keys(*p))...)
 	}
+
 	if overrides := cfg.ValueOverrides; len(overrides) > 0 {
 		properties = append(properties, slices.Collect(maps.Keys(overrides))...)
 	}
+
 	if inherited := cfg.PatternProperties; len(inherited) > 0 {
 		for _, patternschema := range inherited {
 			if p := patternschema.Properties; p != nil && len(*p) > 0 {
@@ -145,6 +149,7 @@ func scheYAMLObject(schema *jsonschema.Schema, cfg *Config) ([]*yaml.Node, error
 			}
 		}
 	}
+
 	properties = unique(properties)
 	sort.Strings(properties)
 
@@ -167,11 +172,13 @@ func scheYAMLObject(schema *jsonschema.Schema, cfg *Config) ([]*yaml.Node, error
 		// collect property, the patterns the propertyName matches and combine them as a slice of schemas
 		// in order of specificity (property > patterns > inherited patterns)
 		var schemas []*jsonschema.Schema
+
 		if schema.Properties != nil {
 			if property, ok := (*schema.Properties)[propertyName]; ok {
 				schemas = append(schemas, property)
 			}
 		}
+
 		patterns := patternPropertiesForProperty(schema, propertyName)
 		schemas = append(schemas, patterns...)
 
@@ -185,6 +192,7 @@ func scheYAMLObject(schema *jsonschema.Schema, cfg *Config) ([]*yaml.Node, error
 				}
 			}
 		}
+
 		rootschema, _ := coalesce(schemas, notNil)
 
 		// keyNode of the key: value pair in YAML
@@ -212,6 +220,7 @@ func scheYAMLObject(schema *jsonschema.Schema, cfg *Config) ([]*yaml.Node, error
 
 		// add a HeadComment to the schema if a node is found which has a description or examples
 		schemaWithDescription, hasDescription := coalesce(schemas, withDescription)
+
 		schemaWithExamples, hasExamples := coalesce(schemas, withExamples)
 		switch {
 		case hasDescription && hasExamples:
@@ -251,6 +260,7 @@ func resolve(schemas []*jsonschema.Schema) []*jsonschema.Schema {
 			res[i] = s.ResolvedRef
 			continue
 		}
+
 		res[i] = s
 	}
 
@@ -267,6 +277,7 @@ func patternPropertiesForProperty(schema *jsonschema.Schema, propertyName string
 	result := make([]*jsonschema.Schema, 0, len(*patterns))
 	for _, pattern := range slices.Sorted(maps.Keys(*patterns)) {
 		patternschema := (*patterns)[pattern]
+
 		regex := regexp.MustCompile(pattern)
 		if regex.MatchString(propertyName) {
 			result = append(result, patternschema)
@@ -300,6 +311,7 @@ func formatHeadComment(description string, examples []any, lineLength uint) stri
 	if len(examples) > 0 {
 		// Have to prepend a # here, newlines aren't commented by default
 		builder.WriteString("Examples:\n")
+
 		for _, example := range examples {
 			_, _ = builder.WriteString("- ")
 			if example != nil {
@@ -307,6 +319,7 @@ func formatHeadComment(description string, examples []any, lineLength uint) stri
 			} else {
 				_, _ = builder.WriteString(NullValue)
 			}
+
 			_, _ = builder.WriteRune('\n')
 		}
 	}

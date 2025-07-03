@@ -265,7 +265,9 @@ func TestScheYAML_NestedPatternProperties(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := NewConfig()
+
 	var overrides map[string]any
+
 	overridesData, err := os.ReadFile(path.Join("testdata", "test-schema-nested-pattern-properties-overrides.yaml"))
 	require.NoError(t, err)
 	require.NoError(t, yaml.Unmarshal(overridesData, &overrides))
@@ -344,7 +346,9 @@ func TestScheYAML_OverridesOnSchemaWithoutPropertiesDoesNotPanic(t *testing.T) {
 	require.NoError(t, err)
 
 	cfg := NewConfig()
+
 	var overrides map[string]any
+
 	overridesData, err := os.ReadFile(path.Join("testdata", "test-schema-without-properties-overrides.yaml"))
 	require.NoError(t, err)
 	require.NoError(t, yaml.Unmarshal(overridesData, &overrides))

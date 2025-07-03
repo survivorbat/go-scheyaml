@@ -19,15 +19,6 @@ const defaultTODOComment = "TODO: Fill this in"
 // Also, this docstring is written to not exceed the 80 character limit :)
 const defaultLineLength = 80
 
-// NewConfig instantiates a config object with default values
-func NewConfig() *Config {
-	return &Config{
-		ValueOverrides: make(map[string]any),
-		TODOComment:    defaultTODOComment,
-		LineLength:     defaultLineLength,
-	}
-}
-
 // Config serves as the configuration object to allow customisation in the library
 type Config struct {
 	// OutputHeader is added to the top of the generated result as a comment, This property is only available at the root level and not copied in
@@ -76,13 +67,24 @@ type Config struct {
 	SkipValidate bool
 }
 
+// NewConfig instantiates a config object with default values
+func NewConfig() *Config {
+	return &Config{
+		ValueOverrides: make(map[string]any),
+		TODOComment:    defaultTODOComment,
+		LineLength:     defaultLineLength,
+	}
+}
+
 // forProperty will construct a config object for the given property, allows for recursive
 // digging into property overrides
 func (c *Config) forProperty(propertyName string, patternProps []*jsonschema.Schema) *Config { //nolint:cyclop // accepted complexity for forProperty
-	var valueOverride any
-	var hasValueOverride bool
-	var valueOverrides map[string]any
-	var itemsOverrides []any
+	var (
+		valueOverride    any
+		hasValueOverride bool
+		valueOverrides   map[string]any
+		itemsOverrides   []any
+	)
 
 	propertyOverrides, ok := c.ValueOverrides[propertyName]
 	if mapoverrides, isMapStringAny := asMapStringAny(propertyOverrides); ok && isMapStringAny {
@@ -96,6 +98,7 @@ func (c *Config) forProperty(propertyName string, patternProps []*jsonschema.Sch
 
 	patterns := make([]*jsonschema.Schema, 0, len(patternProps)+len(c.PatternProperties))
 	patterns = append(patterns, patternProps...)
+
 	for _, p := range c.PatternProperties {
 		if len(p.Type) == 0 || p.Type[0] != "object" {
 			continue
@@ -136,9 +139,11 @@ func (c *Config) forProperty(propertyName string, patternProps []*jsonschema.Sch
 // digging into property overrides for items in slices. It checks the ItemsOverrides and makes a specific
 // override available on the confix for the particular index
 func (c *Config) forIndex(index int) *Config {
-	var valueOverride any
-	var hasValueOverride bool
-	var valueOverrides map[string]any
+	var (
+		valueOverride    any
+		hasValueOverride bool
+		valueOverrides   map[string]any
+	)
 
 	if len(c.ItemsOverrides) > index {
 		if value, asMap := asMapStringAny(c.ItemsOverrides[index]); asMap {
@@ -194,6 +199,7 @@ func asSliceAny(input any) ([]any, bool) {
 	// fallback to reflect
 	if reflect.TypeOf(input).Kind() == reflect.Slice {
 		valueOf := reflect.ValueOf(input)
+
 		res := make([]any, 0, valueOf.Len())
 		for _, value := range valueOf.Seq2() {
 			res = append(res, value.Interface())

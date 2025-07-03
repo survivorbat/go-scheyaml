@@ -13,6 +13,7 @@ linters:
     - varnamelen
     - wrapcheck
     - wsl
+    - noinlineerr
   settings:
     gocritic:
       disabled-checks:

@@ -169,6 +169,7 @@ func TestConfig_forProperty_MapStringAnyTypeAlias(t *testing.T) {
 	t.Parallel()
 	// Arrange
 	type MapAlias map[string]any
+
 	cfg := NewConfig()
 	cfg.ValueOverrides = map[string]any{
 		"abc": MapAlias{
@@ -190,6 +191,7 @@ func TestConfig_forProperty_NilMapStringAnyTypeAlias(t *testing.T) {
 	t.Parallel()
 	// Arrange
 	type MapAlias map[string]any
+
 	cfg := NewConfig()
 	cfg.ValueOverrides = map[string]any{
 		"abc": MapAlias(nil),
