@@ -2,6 +2,7 @@ package scheyaml
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"maps"
 	"slices"
@@ -10,6 +11,9 @@ import (
 	"github.com/kaptinlin/jsonschema"
 	"gopkg.in/yaml.v3"
 )
+
+// ErrInvalidInput is returned if given parameters are invalid
+var ErrInvalidInput = errors.New("invalid input given")
 
 // InvalidSchemaError is returned when the schema is not valid, see jsonschema.Validate
 type InvalidSchemaError struct {
@@ -34,6 +38,10 @@ func (e InvalidSchemaError) Error() string {
 //
 // You may provide options to customise the output.
 func SchemaToYAML(schema *jsonschema.Schema, opts ...Option) ([]byte, error) {
+	if schema == nil {
+		return nil, fmt.Errorf("schema is nil: %w", ErrInvalidInput)
+	}
+
 	rootNode, err := SchemaToNode(schema, opts...)
 	if err != nil {
 		return nil, fmt.Errorf("failed to scheyaml schema: %w", err)
@@ -61,6 +69,10 @@ func SchemaToYAML(schema *jsonschema.Schema, opts ...Option) ([]byte, error) {
 //
 // You may provide options to customise the output.
 func SchemaToNode(schema *jsonschema.Schema, opts ...Option) (*yaml.Node, error) {
+	if schema == nil {
+		return nil, fmt.Errorf("schema is nil: %w", ErrInvalidInput)
+	}
+
 	config := NewConfig()
 
 	for _, opt := range opts {

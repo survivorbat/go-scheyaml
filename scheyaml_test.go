@@ -28,6 +28,16 @@ func TestInvalidSchemaError_Error(t *testing.T) {
 	assert.Equal(t, "1: message\n2: message\n", message)
 }
 
+func TestSchemaToYAML_ReturnsErrorOnNilSchema(t *testing.T) {
+	t.Parallel()
+	// Act
+	result, err := SchemaToYAML(nil)
+
+	// Assert
+	require.ErrorIs(t, err, ErrInvalidInput)
+	assert.Empty(t, result)
+}
+
 func TestSchemaToYAML_ReturnsExpectedOutput(t *testing.T) {
 	t.Parallel()
 	// Arrange
@@ -50,6 +60,16 @@ func TestSchemaToYAML_ReturnsExpectedOutput(t *testing.T) {
 
 	// If the properties are as expected, test the comments
 	assert.Equal(t, string(expectedData), string(result))
+}
+
+func TestSchemaToNode_ReturnsErrorOnNilSchema(t *testing.T) {
+	t.Parallel()
+	// Act
+	result, err := SchemaToNode(nil)
+
+	// Assert
+	require.ErrorIs(t, err, ErrInvalidInput)
+	assert.Empty(t, result)
 }
 
 func TestSchemaToNode_ReturnsExpectedOutput(t *testing.T) {
